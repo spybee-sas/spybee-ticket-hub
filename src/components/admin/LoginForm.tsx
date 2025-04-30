@@ -42,7 +42,7 @@ const LoginForm = () => {
       
       // Check password using a separate query with pgcrypto
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<CheckAdminPasswordParams, boolean>('check_admin_password', {
+        .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
