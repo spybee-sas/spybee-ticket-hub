@@ -37,11 +37,12 @@ const Login = () => {
       }
       
       // Check password using a separate query with pgcrypto
+      // Fix the TypeScript error by properly typing the RPC function parameters
       const { data: passwordCheck, error: passwordError } = await supabase
         .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
-        });
+        } as { admin_email: string; admin_password: string });
       
       if (passwordError || !passwordCheck) {
         throw new Error('Invalid credentials');
