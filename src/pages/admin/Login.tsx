@@ -37,14 +37,8 @@ const Login = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Define the parameter types and return type correctly
-      interface CheckPasswordParams {
-        admin_email: string;
-        admin_password: string;
-      }
-      
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean, CheckPasswordParams>('check_admin_password', {
+        .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
