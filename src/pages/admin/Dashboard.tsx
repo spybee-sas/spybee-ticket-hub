@@ -21,6 +21,15 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { mockTickets } from "@/lib/mockData";
 import { Ticket, TicketStatus } from "@/types/ticket";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -29,6 +38,7 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [view, setView] = useState<"table" | "kanban">("table");
 
   // Stats
   const openTickets = tickets.filter((t) => t.status === "Open").length;
@@ -151,7 +161,7 @@ const Dashboard = () => {
               <CardTitle>Filter Tickets</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="text-sm font-medium block mb-2">
                     Status
@@ -204,103 +214,280 @@ const Dashboard = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
+                
+                <div>
+                  <label className="text-sm font-medium block mb-2">
+                    View
+                  </label>
+                  <Tabs defaultValue={view} onValueChange={(v) => setView(v as "table" | "kanban")} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="table">Table</TabsTrigger>
+                      <TabsTrigger value="kanban">Kanban</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
               </div>
             </CardContent>
           </Card>
           
-          {/* Tickets Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>All Tickets</CardTitle>
-              <CardDescription>
-                {filteredTickets.length} tickets found
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="py-3 px-4 text-left font-medium text-gray-500">ID</th>
-                      <th className="py-3 px-4 text-left font-medium text-gray-500">Name</th>
-                      <th className="py-3 px-4 text-left font-medium text-gray-500">Project</th>
-                      <th className="py-3 px-4 text-left font-medium text-gray-500">Category</th>
-                      <th className="py-3 px-4 text-left font-medium text-gray-500">Status</th>
-                      <th className="py-3 px-4 text-left font-medium text-gray-500">Created</th>
-                      <th className="py-3 px-4 text-left font-medium text-gray-500">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTickets.map((ticket) => (
-                      <tr key={ticket.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4">{ticket.id}</td>
-                        <td className="py-3 px-4">
-                          <div>
-                            <div>{ticket.name}</div>
-                            <div className="text-xs text-gray-500">{ticket.email}</div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">{ticket.project}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-block px-2 py-1 text-xs rounded-full ${
-                              ticket.category === "Bug"
-                                ? "bg-red-100 text-red-800"
-                                : ticket.category === "Complaint"
-                                ? "bg-purple-100 text-purple-800"
-                                : ticket.category === "Delivery Issue"
-                                ? "bg-orange-100 text-orange-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {ticket.category}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <Select
-                            value={ticket.status}
-                            onValueChange={(value) => handleStatusChange(ticket.id, value as TicketStatus)}
-                          >
-                            <SelectTrigger className="h-8 w-36">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Open">Open</SelectItem>
-                              <SelectItem value="In Progress">In Progress</SelectItem>
-                              <SelectItem value="Closed">Closed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="py-3 px-4">
-                          {new Date(ticket.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
-                          >
-                            View
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                    
-                    {filteredTickets.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-gray-500">
-                          No tickets found matching your filters
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Tickets Views */}
+          {view === "table" ? (
+            <TicketsTable 
+              tickets={filteredTickets} 
+              handleStatusChange={handleStatusChange} 
+              navigate={navigate} 
+            />
+          ) : (
+            <KanbanBoard 
+              tickets={filteredTickets} 
+              handleStatusChange={handleStatusChange} 
+              navigate={navigate}
+            />
+          )}
         </main>
       </div>
     </AdminLayout>
+  );
+};
+
+// Tickets Table Component
+const TicketsTable = ({ 
+  tickets, 
+  handleStatusChange, 
+  navigate 
+}: { 
+  tickets: Ticket[]; 
+  handleStatusChange: (id: string, status: TicketStatus) => void;
+  navigate: (path: string) => void;
+}) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>All Tickets</CardTitle>
+        <CardDescription>
+          {tickets.length} tickets found
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Project</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tickets.map((ticket) => (
+              <TableRow key={ticket.id}>
+                <TableCell>{ticket.id}</TableCell>
+                <TableCell>
+                  <div>
+                    <div>{ticket.name}</div>
+                    <div className="text-xs text-gray-500">{ticket.email}</div>
+                  </div>
+                </TableCell>
+                <TableCell>{ticket.project}</TableCell>
+                <TableCell>
+                  <span
+                    className={`inline-block px-2 py-1 text-xs rounded-full ${
+                      ticket.category === "Bug"
+                        ? "bg-red-100 text-red-800"
+                        : ticket.category === "Complaint"
+                        ? "bg-purple-100 text-purple-800"
+                        : ticket.category === "Delivery Issue"
+                        ? "bg-orange-100 text-orange-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {ticket.category}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={ticket.status}
+                    onValueChange={(value) => handleStatusChange(ticket.id, value as TicketStatus)}
+                  >
+                    <SelectTrigger className="h-8 w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Open">Open</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  {new Date(ticket.created_at).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
+                  >
+                    View
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            
+            {tickets.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                  No tickets found matching your filters
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Kanban Board Component
+const KanbanBoard = ({ 
+  tickets, 
+  handleStatusChange, 
+  navigate 
+}: { 
+  tickets: Ticket[]; 
+  handleStatusChange: (id: string, status: TicketStatus) => void;
+  navigate: (path: string) => void;
+}) => {
+  // Group tickets by status
+  const openTickets = tickets.filter(ticket => ticket.status === "Open");
+  const inProgressTickets = tickets.filter(ticket => ticket.status === "In Progress");
+  const closedTickets = tickets.filter(ticket => ticket.status === "Closed");
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Open Column */}
+      <KanbanColumn 
+        title="Open" 
+        tickets={openTickets} 
+        handleStatusChange={handleStatusChange}
+        navigate={navigate}
+        columnColor="blue"
+      />
+      
+      {/* In Progress Column */}
+      <KanbanColumn 
+        title="In Progress" 
+        tickets={inProgressTickets} 
+        handleStatusChange={handleStatusChange}
+        navigate={navigate}
+        columnColor="amber"
+      />
+      
+      {/* Closed Column */}
+      <KanbanColumn 
+        title="Closed" 
+        tickets={closedTickets} 
+        handleStatusChange={handleStatusChange}
+        navigate={navigate}
+        columnColor="green"
+      />
+    </div>
+  );
+};
+
+// Kanban Column Component
+const KanbanColumn = ({ 
+  title, 
+  tickets, 
+  handleStatusChange, 
+  navigate,
+  columnColor
+}: { 
+  title: string; 
+  tickets: Ticket[]; 
+  handleStatusChange: (id: string, status: TicketStatus) => void;
+  navigate: (path: string) => void;
+  columnColor: "blue" | "amber" | "green";
+}) => {
+  return (
+    <Card className="h-full">
+      <CardHeader className={`bg-${columnColor}-50 border-b border-${columnColor}-100`}>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg">{title}</CardTitle>
+          <span className={`bg-${columnColor}-500 text-white text-sm font-semibold px-2.5 py-0.5 rounded-full`}>
+            {tickets.length}
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4 max-h-[600px] overflow-y-auto">
+        {tickets.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No tickets in this column
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {tickets.map((ticket) => (
+              <Card key={ticket.id} className="shadow-sm hover:shadow transition-all">
+                <CardHeader className="p-3 pb-2">
+                  <div className="flex justify-between">
+                    <span className="text-xs font-medium text-gray-500">#{ticket.id}</span>
+                    <span
+                      className={`inline-block px-2 py-1 text-xs rounded-full ${
+                        ticket.category === "Bug"
+                          ? "bg-red-100 text-red-800"
+                          : ticket.category === "Complaint"
+                          ? "bg-purple-100 text-purple-800"
+                          : ticket.category === "Delivery Issue"
+                          ? "bg-orange-100 text-orange-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {ticket.category}
+                    </span>
+                  </div>
+                  <CardTitle className="text-sm mt-1">{ticket.project}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <div className="text-xs text-gray-600 mb-2">
+                    {ticket.name} • {ticket.email}
+                  </div>
+                  <p className="text-sm line-clamp-2 mb-3">
+                    {ticket.description.substring(0, 100)}
+                    {ticket.description.length > 100 ? "..." : ""}
+                  </p>
+                  <div className="flex justify-between items-center mt-2">
+                    <Select
+                      value={ticket.status}
+                      onValueChange={(value) => handleStatusChange(ticket.id, value as TicketStatus)}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Open">Open</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Closed">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
+                    >
+                      View →
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

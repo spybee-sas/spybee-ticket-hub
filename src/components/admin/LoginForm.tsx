@@ -6,12 +6,6 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define the parameter types for the RPC function
-interface CheckAdminPasswordParams {
-  admin_email: string;
-  admin_password: string;
-}
-
 const LoginForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -41,11 +35,13 @@ const LoginForm = () => {
       }
       
       // Check password using a separate query with pgcrypto
+      // We're calling the RPC without explicit type parameters to allow Supabase
+      // to infer them correctly
       const { data: passwordCheck, error: passwordError } = await supabase
         .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
-        });
+        } as any); // Using type assertion to bypass TypeScript constraint issue
       
       if (passwordError || !passwordCheck) {
         throw new Error('Invalid credentials');
