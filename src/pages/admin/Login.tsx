@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "@/components/NavBar";
@@ -52,12 +53,12 @@ const Login = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Fix: Correct type parameter ordering for rpc method
+      // Fix: Let TypeScript infer the types based on the parameters
       const { data: passwordCheck, error: passwordError } = await supabase
         .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
-        });
+        } as CheckAdminPasswordParams);
       
       if (passwordError || !passwordCheck) {
         throw new Error('Invalid credentials');
