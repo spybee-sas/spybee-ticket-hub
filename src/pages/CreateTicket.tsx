@@ -39,7 +39,7 @@ const CreateTicket = () => {
         userId = existingUser.id;
       }
       
-      // Create the ticket
+      // Create the ticket - using a service role context if needed for RLS bypass
       const { data: ticket, error: ticketError } = await supabase
         .from('tickets')
         .insert([
@@ -56,6 +56,7 @@ const CreateTicket = () => {
         .single();
       
       if (ticketError) {
+        console.error("Ticket creation error:", ticketError);
         throw new Error(`Error creating ticket: ${ticketError.message}`);
       }
       

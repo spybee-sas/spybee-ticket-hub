@@ -35,13 +35,13 @@ const LoginForm = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // We're calling the RPC without explicit type parameters to allow Supabase
-      // to infer them correctly
+      // Using .rpc() without explicit type parameters to allow Supabase
+      // to infer the correct types
       const { data: passwordCheck, error: passwordError } = await supabase
         .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
-        } as any); // Using type assertion to bypass TypeScript constraint issue
+        });
       
       if (passwordError || !passwordCheck) {
         throw new Error('Invalid credentials');

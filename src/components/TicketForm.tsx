@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { TicketCategory } from "@/types/ticket";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -47,7 +48,7 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
       name: "",
       email: "",
       project: "",
-      category: "Bug",
+      category: "Bug" as TicketCategory,
       description: "",
     },
   });
@@ -66,12 +67,13 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
   const onSubmit = (data: TicketFormValues) => {
     setIsSubmitting(true);
     
-    // Simulate API call
+    if (onSubmitSuccess) {
+      onSubmitSuccess({ ...data, files });
+      return;
+    }
+    
+    // Simulate API call if no onSubmitSuccess is provided
     setTimeout(() => {
-      if (onSubmitSuccess) {
-        onSubmitSuccess({ ...data, files });
-      }
-      
       toast.success("Ticket submitted successfully!", {
         description: `Ticket ID: T-${Math.floor(1000 + Math.random() * 9000)}`,
       });
