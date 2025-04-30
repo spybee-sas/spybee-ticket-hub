@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "@/components/NavBar";
@@ -53,9 +52,9 @@ const Login = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Fix: Specify both the return type and parameters type for rpc
+      // Fix: Correct type parameter ordering for rpc method
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
