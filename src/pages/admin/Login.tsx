@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -23,21 +24,45 @@ const Login = () => {
     
     setIsLoading(true);
     
-    // In a real app, this would be an API call to authenticate
-    setTimeout(() => {
-      // Mock admin credentials (in a real app, this would be securely checked on the server)
-      if (email === "admin@spybee.com" && password === "admin123") {
-        // Store admin session in localStorage (in a real app, use proper auth tokens)
-        localStorage.setItem("spybee_admin", JSON.stringify({ email, isAdmin: true }));
-        
-        navigate("/admin/dashboard");
-        toast.success("Login successful!");
-      } else {
-        toast.error("Invalid credentials. Please try again.");
+    try {
+      // Query the admins table to find a matching admin
+      const { data: admin, error } = await supabase
+        .from('admins')
+        .select('id, email, name')
+        .eq('email', email)
+        .single();
+      
+      if (error) {
+        throw new Error('Authentication failed');
       }
       
+      // Check password using a separate query with pgcrypto
+      const { data: passwordCheck, error: passwordError } = await supabase
+        .rpc('check_admin_password', {
+          admin_email: email,
+          admin_password: password
+        });
+      
+      if (passwordError || !passwordCheck) {
+        throw new Error('Invalid credentials');
+      }
+      
+      // Store admin session in localStorage
+      localStorage.setItem("spybee_admin", JSON.stringify({ 
+        email: admin.email, 
+        name: admin.name,
+        id: admin.id,
+        isAdmin: true 
+      }));
+      
+      toast.success("Login successful!");
+      navigate("/admin/dashboard");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error("Invalid credentials. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -90,12 +115,6 @@ const Login = () => {
                 >
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
-                
-                <div className="text-center text-sm text-gray-500 mt-4">
-                  <p>For demo purposes:</p>
-                  <p>Email: admin@spybee.com</p>
-                  <p>Password: admin123</p>
-                </div>
               </form>
             </CardContent>
           </Card>
