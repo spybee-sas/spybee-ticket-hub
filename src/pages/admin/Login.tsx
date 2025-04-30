@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "@/components/NavBar";
@@ -54,7 +53,7 @@ const Login = () => {
       
       // Check password using a separate query with pgcrypto
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc('check_admin_password', {
+        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
