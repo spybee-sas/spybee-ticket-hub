@@ -40,6 +40,7 @@ const SignupForm = () => {
         
       if (existingAdmin) {
         toast.error("An account with this email already exists");
+        setIsSigningUp(false);
         return;
       }
       

@@ -41,12 +41,11 @@ const LoginForm = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Using a type assertion to help TypeScript understand the parameter structure
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc('check_admin_password', {
+        .rpc<boolean>('check_admin_password', {
           admin_email: email,
           admin_password: password
-        } as CheckAdminPasswordParams);
+        });
       
       if (passwordError || !passwordCheck) {
         throw new Error('Invalid credentials');
