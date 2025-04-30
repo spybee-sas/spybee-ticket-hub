@@ -53,9 +53,9 @@ const Login = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Fixed: Specify the correct return type as boolean
+      // Fix: Specify both the return type and parameters type for rpc
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean>('check_admin_password', {
+        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
