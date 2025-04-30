@@ -41,9 +41,9 @@ const LoginForm = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Fix the type parameters order for rpc - return type first, then params type
+      // The correct way to type the rpc call is to use just the type for the return value
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
