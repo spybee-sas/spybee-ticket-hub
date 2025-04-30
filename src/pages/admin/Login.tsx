@@ -53,9 +53,9 @@ const Login = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Important: Use type assertion with generic arguments
+      // Fix: Provide both generic type parameters - return type and params type
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean>('check_admin_password', {
+        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
