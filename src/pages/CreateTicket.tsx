@@ -16,14 +16,14 @@ const CreateTicket = () => {
       // Try to find existing user
       let { data: existingUser, error: findUserError } = await supabase
         .from('users')
-        .select('*')
+        .select('id')
         .eq('email', email)
-        .single();
+        .maybeSingle();
       
-      let userId = existingUser?.id;
+      let userId;
       
       // If user doesn't exist, create one
-      if (findUserError && !existingUser) {
+      if (!existingUser) {
         const { data: newUser, error: createUserError } = await supabase
           .from('users')
           .insert([{ name, email }])
@@ -35,6 +35,8 @@ const CreateTicket = () => {
         }
         
         userId = newUser.id;
+      } else {
+        userId = existingUser.id;
       }
       
       // Create the ticket

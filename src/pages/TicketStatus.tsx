@@ -5,14 +5,16 @@ import NavBar from "@/components/NavBar";
 import TicketCard from "@/components/TicketCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getTicketsByEmail } from "@/lib/mockData";
 import { Ticket } from "@/types/ticket";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const TicketStatus = () => {
   const location = useLocation();
   const [email, setEmail] = useState((location.state as any)?.email || "");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if ((location.state as any)?.email) {
@@ -20,13 +22,73 @@ const TicketStatus = () => {
     }
   }, [location.state]);
 
-  const handleSearch = () => {
-    if (!email) return;
+  const handleSearch = async () => {
+    if (!email) {
+      toast.error("Please enter your email address");
+      return;
+    }
     
-    // In a real app, we'd fetch from an API
-    const fetchedTickets = getTicketsByEmail(email);
-    setTickets(fetchedTickets);
-    setSearched(true);
+    setLoading(true);
+    
+    try {
+      // First find the user
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .eq('email', email);
+      
+      if (userError) {
+        throw new Error(`Error finding user: ${userError.message}`);
+      }
+      
+      if (!users || users.length === 0) {
+        // No tickets found for this email
+        setTickets([]);
+        setSearched(true);
+        setLoading(false);
+        return;
+      }
+      
+      // Get all user IDs from the search results
+      const userIds = users.map(user => user.id);
+      
+      // Now get all tickets for these users
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          users!tickets_user_id_fkey (name, email)
+        `)
+        .in('user_id', userIds);
+      
+      if (ticketsError) {
+        throw new Error(`Error finding tickets: ${ticketsError.message}`);
+      }
+      
+      // Transform the data to match our Ticket type
+      const formattedTickets: Ticket[] = ticketsData.map(ticket => ({
+        id: ticket.id,
+        name: ticket.users.name,
+        email: ticket.users.email,
+        project: ticket.project,
+        category: ticket.category,
+        description: ticket.description,
+        status: ticket.status,
+        created_at: ticket.created_at
+      }));
+      
+      setTickets(formattedTickets);
+      
+    } catch (error: any) {
+      console.error("Error searching tickets:", error);
+      toast.error("Failed to search for tickets", { 
+        description: error.message || "Please try again later" 
+      });
+      setTickets([]);
+    } finally {
+      setSearched(true);
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,8 +116,9 @@ const TicketStatus = () => {
               <Button 
                 className="bg-spybee-yellow hover:bg-amber-400 text-spybee-dark"
                 onClick={handleSearch}
+                disabled={loading}
               >
-                Search Tickets
+                {loading ? "Searching..." : "Search Tickets"}
               </Button>
             </div>
           </div>
