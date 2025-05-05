@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-// Define the correct interface for the RPC function result
 interface CheckAdminPasswordResult {
   result: boolean;
 }
@@ -42,7 +41,6 @@ const LoginForm = () => {
       }
       
       // Call the RPC function to check password
-      // Fixed: Use a properly typed call to the RPC function
       const { data, error: passwordError } = await supabase
         .rpc('check_admin_password', {
           admin_email: email,
@@ -52,24 +50,14 @@ const LoginForm = () => {
       if (passwordError || !data) {
         throw new Error('Invalid credentials');
       }
-      
-      // Set up anonymous session with admin ID
-      // This is a simplified approach for demo purposes
-      try {
-        // Sign in anonymously to establish a session
-        await supabase.auth.signInAnonymously();
-        console.log("Anonymous session established for admin operations");
-      } catch (authError) {
-        console.error("Auth setup error:", authError);
-        // Continue anyway - we'll use custom headers as fallback
-      }
-      
-      // Store admin session in localStorage
+
+      // Instead of trying to use anonymous auth, directly store admin session info
       localStorage.setItem("spybee_admin", JSON.stringify({ 
         email: admin.email, 
         name: admin.name,
         id: admin.id,
-        isAdmin: true 
+        isAdmin: true,
+        timestamp: new Date().getTime()
       }));
       
       toast.success(t('login.success'));

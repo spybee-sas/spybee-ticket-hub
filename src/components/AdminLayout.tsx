@@ -45,32 +45,27 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     
     try {
       const admin = JSON.parse(adminData);
+      
+      // Check if admin session is valid
       if (!admin.isAdmin) {
         throw new Error("Not authorized");
       }
       
-      // Set up anonymous session for database access
-      // This is a simplified approach for demo purposes
-      // In a real app, you would use proper auth flows
-      const setupAnonymousSession = async () => {
-        try {
-          // Create an anonymous session with the admin's ID embedded
-          // This is just for the demo - in a real app, use proper auth
-          const { data, error } = await supabase.auth.signInAnonymously();
-          
-          if (error) {
-            console.error("Anonymous auth error:", error);
-            throw new Error("Authentication failed");
-          }
-          
-          console.log("Anonymous session established for admin operations");
-        } catch (authError) {
-          console.error("Auth setup error:", authError);
-          // Continue anyway - we'll try to use custom headers for operations
-        }
-      };
+      // Check if session is expired (24 hours)
+      const currentTime = new Date().getTime();
+      const sessionTime = admin.timestamp || 0;
+      const sessionAge = currentTime - sessionTime;
       
-      setupAnonymousSession();
+      // If session is older than 24 hours, consider it expired
+      if (sessionAge > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem("spybee_admin");
+        throw new Error("Session expired");
+      }
+      
+      // Set up custom headers for API requests
+      supabase.functions.setAuth(`admin_session_${admin.id}`);
+      
+      console.log("Admin session validated:", admin.email);
       setIsAuthorized(true);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Session expired or invalid";
@@ -85,8 +80,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     // Cleanup function
     return () => {
       clearInterval(timer);
-      // Sign out of any anonymous session when component unmounts
-      supabase.auth.signOut().catch(console.error);
     };
   }, [navigate]);
 

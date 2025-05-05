@@ -60,10 +60,10 @@ export const getColumnIdFromStatus = (status: TicketStatus): string => {
 };
 
 /**
- * Get a service role token from admin localStorage data
- * @returns A JWT token string for API access, or null if not found
+ * Get admin data from localStorage
+ * @returns The admin data or null if not found
  */
-const getServiceToken = (): string | null => {
+const getAdminData = (): { id: string, email: string, name: string, isAdmin: boolean } | null => {
   try {
     const adminData = localStorage.getItem("spybee_admin");
     if (!adminData) {
@@ -77,10 +77,7 @@ const getServiceToken = (): string | null => {
       return null;
     }
     
-    // Admin is authenticated, use a special header to bypass RLS
-    // Note: In a production app, you'd use a proper auth solution
-    // This is a simplified approach for the demo
-    return `Bearer admin_session_${admin.id}`;
+    return admin;
   } catch (error) {
     console.error("Error parsing admin data:", error);
     return null;
@@ -106,17 +103,16 @@ export const updateTicketStatus = async (
   try {
     console.log(`Starting status update operation for ticket ${ticketId} to ${newStatus}...`);
     
+    // Get admin data
+    const admin = getAdminData();
+    if (!admin) {
+      throw new Error('Admin authentication failed');
+    }
+    
     // Prepare the timestamp for the update
     const timestamp = new Date().toISOString();
     
     console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
-    
-    // Get the admin token
-    const adminToken = getServiceToken();
-    if (!adminToken) {
-      console.error('No admin token available. This will cause permission issues.');
-      throw new Error('Admin authentication failed');
-    }
     
     // Explicitly prepare the update data
     const updateData = { 
@@ -125,10 +121,10 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
-    // Create a custom client with admin headers to bypass RLS
-    // In a real production app, you would use proper auth mechanisms
+    // Create headers with admin auth information
+    // This header will be passed to your RLS policies
     const headers = {
-      'X-Admin-Auth': adminToken,
+      'X-Admin-Auth': `Bearer admin_session_${admin.id}`,
       'Prefer': 'return=minimal'
     };
     
@@ -137,7 +133,8 @@ export const updateTicketStatus = async (
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
-      .select();
+      .select()
+      .headers(headers);
     
     if (error) {
       console.error('Database update error:', error);
@@ -153,8 +150,6 @@ export const updateTicketStatus = async (
       throw error;
     }
     
-    // Even if no data is returned (which is normal for updates), consider it a success
-    // as long as there's no error
     console.log('Database update succeeded without errors');
     
     // Update UI optimistically after successful database update
