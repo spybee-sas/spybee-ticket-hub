@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { TicketCategory } from "@/types/ticket";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -41,9 +42,39 @@ interface TicketFormProps {
 const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t, language } = useLanguage();
+
+  // Custom error messages based on language
+  const getErrorMessages = () => {
+    if (language === 'es') {
+      return {
+        nameRequired: "El nombre debe tener al menos 2 caracteres.",
+        emailInvalid: "Por favor proporcione una dirección de correo electrónico válida.",
+        projectRequired: "El nombre del proyecto es requerido.",
+        descriptionRequired: "La descripción debe tener al menos 10 caracteres."
+      };
+    }
+    return {
+      nameRequired: "Name must be at least 2 characters.",
+      emailInvalid: "Please provide a valid email address.",
+      projectRequired: "Project name is required.",
+      descriptionRequired: "Description must be at least 10 characters."
+    };
+  };
+
+  const errorMessages = getErrorMessages();
+
+  // Update form schema with translated error messages
+  const getFormSchema = () => z.object({
+    name: z.string().min(2, errorMessages.nameRequired),
+    email: z.string().email(errorMessages.emailInvalid),
+    project: z.string().min(1, errorMessages.projectRequired),
+    category: z.enum(["Bug", "Complaint", "Delivery Issue", "Other"]),
+    description: z.string().min(10, errorMessages.descriptionRequired),
+  });
 
   const form = useForm<TicketFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(getFormSchema()),
     defaultValues: {
       name: "",
       email: "",
@@ -74,8 +105,8 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
     
     // Simulate API call if no onSubmitSuccess is provided
     setTimeout(() => {
-      toast.success("Ticket submitted successfully!", {
-        description: `Ticket ID: T-${Math.floor(1000 + Math.random() * 9000)}`,
+      toast.success(t('ticket.submitSuccess'), {
+        description: `${t('ticket.id')}: T-${Math.floor(1000 + Math.random() * 9000)}`,
       });
       
       // Reset form
@@ -94,9 +125,9 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>{t('ticket.fullName')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" {...field} />
+                  <Input placeholder={t('ticket.fullNamePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -108,9 +139,9 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t('ticket.email')}</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="john@example.com" {...field} />
+                  <Input type="email" placeholder={t('ticket.emailPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -124,9 +155,9 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
             name="project"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Project Name</FormLabel>
+                <FormLabel>{t('ticket.projectName')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Website Redesign" {...field} />
+                  <Input placeholder={t('ticket.projectNamePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -138,21 +169,21 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
+                <FormLabel>{t('ticket.category')}</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue placeholder={t('ticket.selectCategory')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Bug">Bug</SelectItem>
-                    <SelectItem value="Complaint">Complaint</SelectItem>
-                    <SelectItem value="Delivery Issue">Delivery Issue</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Bug">{t('ticket.categoryBug')}</SelectItem>
+                    <SelectItem value="Complaint">{t('ticket.categoryComplaint')}</SelectItem>
+                    <SelectItem value="Delivery Issue">{t('ticket.categoryDelivery')}</SelectItem>
+                    <SelectItem value="Other">{t('ticket.categoryOther')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -166,10 +197,10 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>{t('ticket.description')}</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Please describe your issue in detail..."
+                  placeholder={t('ticket.descriptionPlaceholder')}
                   className="min-h-[120px]"
                   {...field}
                 />
@@ -180,7 +211,7 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
         />
 
         <div className="space-y-2">
-          <FormLabel>Attachments (Optional)</FormLabel>
+          <FormLabel>{t('ticket.attachments')}</FormLabel>
           <div className="flex items-center gap-4">
             <Input
               type="file"
@@ -189,7 +220,7 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
               className="max-w-sm"
             />
             <span className="text-sm text-muted-foreground">
-              {files.length} {files.length === 1 ? "file" : "files"} selected
+              {files.length} {files.length === 1 ? t('ticket.file') : t('ticket.files')}
             </span>
           </div>
 
@@ -209,7 +240,7 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
                     size="sm"
                     onClick={() => removeFile(index)}
                   >
-                    Remove
+                    {t('ticket.remove')}
                   </Button>
                 </div>
               ))}
@@ -223,7 +254,7 @@ const TicketForm = ({ onSubmitSuccess }: TicketFormProps) => {
             className="bg-spybee-yellow hover:bg-amber-400 text-spybee-dark font-medium"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Submitting..." : "Submit Ticket"}
+            {isSubmitting ? t('ticket.submitting') : t('ticket.submit')}
           </Button>
         </div>
       </form>

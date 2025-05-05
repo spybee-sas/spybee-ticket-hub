@@ -78,6 +78,30 @@ const translations = {
     // Not Found Page
     'notFound.message': 'Oops! Page not found',
     'notFound.returnHome': 'Return to Home',
+    
+    // Ticket Form
+    'ticket.fullName': 'Full Name',
+    'ticket.fullNamePlaceholder': 'John Doe',
+    'ticket.email': 'Email',
+    'ticket.emailPlaceholder': 'john@example.com',
+    'ticket.projectName': 'Project Name',
+    'ticket.projectNamePlaceholder': 'Website Redesign',
+    'ticket.category': 'Category',
+    'ticket.selectCategory': 'Select a category',
+    'ticket.categoryBug': 'Bug',
+    'ticket.categoryComplaint': 'Complaint',
+    'ticket.categoryDelivery': 'Delivery Issue',
+    'ticket.categoryOther': 'Other',
+    'ticket.description': 'Description',
+    'ticket.descriptionPlaceholder': 'Please describe your issue in detail...',
+    'ticket.attachments': 'Attachments (Optional)',
+    'ticket.file': 'file',
+    'ticket.files': 'files',
+    'ticket.remove': 'Remove',
+    'ticket.submit': 'Submit Ticket',
+    'ticket.submitting': 'Submitting...',
+    'ticket.submitSuccess': 'Ticket submitted successfully!',
+    'ticket.id': 'Ticket ID'
   },
   es: {
     // Navigation
@@ -147,6 +171,30 @@ const translations = {
     // Not Found Page
     'notFound.message': '¡Ups! Página no encontrada',
     'notFound.returnHome': 'Volver al Inicio',
+    
+    // Ticket Form
+    'ticket.fullName': 'Nombre Completo',
+    'ticket.fullNamePlaceholder': 'Juan Pérez',
+    'ticket.email': 'Correo Electrónico',
+    'ticket.emailPlaceholder': 'juan@ejemplo.com',
+    'ticket.projectName': 'Nombre del Proyecto',
+    'ticket.projectNamePlaceholder': 'Rediseño del Sitio Web',
+    'ticket.category': 'Categoría',
+    'ticket.selectCategory': 'Seleccione una categoría',
+    'ticket.categoryBug': 'Error',
+    'ticket.categoryComplaint': 'Queja',
+    'ticket.categoryDelivery': 'Problema de Entrega',
+    'ticket.categoryOther': 'Otro',
+    'ticket.description': 'Descripción',
+    'ticket.descriptionPlaceholder': 'Por favor describa su problema en detalle...',
+    'ticket.attachments': 'Archivos Adjuntos (Opcional)',
+    'ticket.file': 'archivo',
+    'ticket.files': 'archivos',
+    'ticket.remove': 'Eliminar',
+    'ticket.submit': 'Enviar Ticket',
+    'ticket.submitting': 'Enviando...',
+    'ticket.submitSuccess': '¡Ticket enviado con éxito!',
+    'ticket.id': 'ID del Ticket'
   }
 };
 

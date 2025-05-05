@@ -14,7 +14,9 @@ type CheckAdminPasswordParams = {
 }
 
 // Define the return type explicitly
-type CheckAdminPasswordResult = boolean;
+type CheckAdminPasswordResult = {
+  result: boolean;
+}
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -52,7 +54,7 @@ const LoginForm = () => {
           admin_password: password
         });
       
-      if (passwordError || !passwordCheck) {
+      if (passwordError || !passwordCheck || !passwordCheck.result) {
         throw new Error('Invalid credentials');
       }
       
