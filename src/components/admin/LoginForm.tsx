@@ -41,9 +41,9 @@ const LoginForm = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Using the correct type parameters for the RPC call
+      // Fix the TypeScript error by explicitly typing the return value separately from params
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc<boolean>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });

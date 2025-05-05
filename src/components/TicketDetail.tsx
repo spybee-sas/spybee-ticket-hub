@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Ticket, TicketComment, TicketStatus } from "@/types/ticket";
 import { formatDistanceToNow, format } from "date-fns";
@@ -136,8 +135,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         userId = '00000000-0000-0000-0000-000000000000';
       }
       
-      // Explicit string value assignment to ensure the constraint is satisfied
-      // The constraint likely requires 'admin' or 'user' exactly
+      // Use EXACTLY 'admin' or 'user' strings for user_type to match database constraint
       const userType = isAdmin ? 'admin' : 'user';
       
       console.log("Comment being created with user_type:", userType);
@@ -146,7 +144,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       const newCommentData = {
         ticket_id: ticket.id,
         user_id: userId,
-        user_type: userType, // Explicit string value - must match check constraint values
+        user_type: userType, // Must be exactly 'admin' or 'user'
         content: comment,
         is_internal: isAdmin && isInternal
       };
