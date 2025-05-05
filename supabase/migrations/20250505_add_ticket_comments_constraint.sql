@@ -16,3 +16,10 @@ ALTER TABLE public.ticket_comments DROP CONSTRAINT IF EXISTS ticket_comments_use
 -- Add the explicit check constraint
 ALTER TABLE public.ticket_comments ADD CONSTRAINT ticket_comments_user_type_check 
   CHECK (user_type IN ('admin', 'user'));
+
+-- Create trigger to enforce the constraint (belt and suspenders approach)
+DROP TRIGGER IF EXISTS check_user_type_trigger ON public.ticket_comments;
+CREATE TRIGGER check_user_type_trigger
+BEFORE INSERT OR UPDATE ON public.ticket_comments
+FOR EACH ROW
+EXECUTE FUNCTION check_user_type_comments();
