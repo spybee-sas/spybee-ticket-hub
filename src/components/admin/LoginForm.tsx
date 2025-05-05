@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -42,21 +41,18 @@ const LoginForm = () => {
       }
       
       // Call the RPC function to check password
+      // Fixed: Use a properly typed call to the RPC function
       const { data, error: passwordError } = await supabase
         .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
-        });
+        }) as { data: { result: boolean } | null, error: Error | null };
       
-      // Properly handle the RPC result
       if (passwordError || !data) {
         throw new Error('Invalid credentials');
       }
       
-      // Correctly cast and check the result
-      const passwordCheck = data as CheckAdminPasswordResult;
-      
-      if (!passwordCheck.result) {
+      if (!data.result) {
         throw new Error('Invalid credentials');
       }
       
