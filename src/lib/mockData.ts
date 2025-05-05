@@ -85,7 +85,8 @@ export const mockComments: TicketComment[] = [
     user: "Tech Support",
     content: "We're looking into this issue. Can you provide which browser you're using?",
     created_at: "2025-04-25T10:15:00Z",
-    is_internal: false
+    is_internal: false,
+    user_type: "admin"
   },
   {
     id: "C-2",
@@ -93,7 +94,8 @@ export const mockComments: TicketComment[] = [
     user: "Admin",
     content: "This seems to be related to the recent form validation update.",
     created_at: "2025-04-25T10:30:00Z",
-    is_internal: true
+    is_internal: true,
+    user_type: "admin"
   },
   {
     id: "C-3",
@@ -101,7 +103,8 @@ export const mockComments: TicketComment[] = [
     user: "Project Manager",
     content: "I've spoken with the design team, and they will deliver the mockups by EOD today.",
     created_at: "2025-04-24T09:45:00Z",
-    is_internal: false
+    is_internal: false,
+    user_type: "admin"
   }
 ];
 

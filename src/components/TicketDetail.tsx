@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Ticket, TicketComment, TicketStatus } from "@/types/ticket";
 import { formatDistanceToNow, format } from "date-fns";
@@ -52,7 +53,8 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
           user: comment.user_type === 'admin' ? 'Admin' : ticket.name,
           content: comment.content,
           created_at: comment.created_at,
-          is_internal: comment.is_internal
+          is_internal: comment.is_internal,
+          user_type: comment.user_type // Make sure to include user_type
         }));
         
         setComments(formattedComments);
@@ -170,7 +172,8 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
           user: isAdmin ? 'Admin' : ticket.name,
           content: data[0].content,
           created_at: data[0].created_at,
-          is_internal: data[0].is_internal
+          is_internal: data[0].is_internal,
+          user_type: data[0].user_type // Make sure to include user_type
         };
         
         setComments(prev => [newComment, ...prev]);

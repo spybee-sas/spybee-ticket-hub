@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define the type for the RPC function parameters and return type
+// Define the correct types for the RPC function
 type CheckAdminPasswordParams = {
   admin_email: string;
   admin_password: string;
 }
+
+type CheckAdminPasswordResult = boolean;
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -39,9 +42,9 @@ const LoginForm = () => {
         throw new Error('Authentication failed');
       }
       
-      // Use explicit typing for both the return type and params
+      // Use correct typing for both the return type and params
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc<CheckAdminPasswordResult, CheckAdminPasswordParams>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
