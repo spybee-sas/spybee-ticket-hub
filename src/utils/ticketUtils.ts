@@ -1,3 +1,4 @@
+
 import { UserType, TicketStatus } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -74,24 +75,36 @@ export const updateTicketStatus = async (
 ) => {
   // First update local state for optimistic UI
   const updatedTickets = currentTickets.map((ticket) =>
-    ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
+    ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: new Date().toISOString() } : ticket
   );
   
   setTickets(updatedTickets);
   
   try {
+    console.log(`Updating ticket ${ticketId} status to ${newStatus}...`);
+    
     // Update status in Supabase
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('tickets')
       .update({ 
         status: newStatus,
         updated_at: new Date().toISOString()
       })
-      .eq('id', ticketId);
+      .eq('id', ticketId)
+      .select('*');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Database update error:', error);
+      throw error;
+    }
     
-    return { success: true };
+    console.log('Update response data:', data);
+    
+    if (!data || data.length === 0) {
+      console.warn('No data returned from update operation');
+    }
+    
+    return { success: true, data };
   } catch (error: any) {
     console.error("Failed to update ticket status:", error);
     

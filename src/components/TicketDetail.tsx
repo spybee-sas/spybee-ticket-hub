@@ -23,6 +23,37 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
     fetchComments();
   }, [ticket.id]);
 
+  // Re-fetch ticket data when status changes to ensure we have the latest data
+  useEffect(() => {
+    if (status !== ticket.status) {
+      fetchTicketData();
+    }
+  }, [status]);
+
+  const fetchTicketData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('id', ticket.id)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setTicketData({
+          ...ticketData,
+          status: data.status,
+          updated_at: data.updated_at
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching ticket data:", error);
+    }
+  };
+
   const fetchComments = async () => {
     try {
       const { data, error } = await supabase
@@ -62,6 +93,8 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   };
 
   const handleStatusChange = async (newStatus: TicketStatus) => {
+    console.log(`TicketDetail: Changing status to ${newStatus}`);
+    
     // Use the centralized function for updating ticket status
     const result = await updateTicketStatus(
       ticket.id, 
@@ -77,6 +110,8 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
     
     if (result.success) {
       toast.success(`Ticket status updated to ${newStatus}`);
+      // Force a refresh of the ticket data to ensure we have the latest from DB
+      fetchTicketData();
     } else {
       toast.error("Failed to update ticket status");
     }

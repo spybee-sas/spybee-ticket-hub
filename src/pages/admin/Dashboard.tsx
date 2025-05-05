@@ -65,52 +65,52 @@ const Dashboard = () => {
   }))).filter(domain => domain !== '');
 
   // Fetch real tickets from Supabase
-  useEffect(() => {
-    const fetchTickets = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('tickets')
-          .select(`
-            *,
-            users!tickets_user_id_fkey (name, email)
-          `)
-          .order('created_at', { ascending: false });
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          users!tickets_user_id_fkey (name, email)
+        `)
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          throw new Error(`Error fetching tickets: ${error.message}`);
-        }
-
-        // Transform data to match our Ticket interface
-        const formattedTickets: Ticket[] = data.map(ticket => ({
-          id: ticket.id,
-          name: ticket.users.name,
-          email: ticket.users.email,
-          project: ticket.project,
-          category: ticket.category,
-          description: ticket.description,
-          status: ticket.status,
-          created_at: ticket.created_at,
-          updated_at: ticket.updated_at,
-          user_id: ticket.user_id,
-          title: ticket.title
-        }));
-
-        setTickets(formattedTickets);
-        setFilteredTickets(formattedTickets);
-      } catch (error: any) {
-        console.error("Failed to fetch tickets:", error);
-        toast.error("Failed to load tickets", {
-          description: error.message || "Please try again later"
-        });
-        // Fall back to mock data if fetch fails
-        setTickets(mockTickets);
-        setFilteredTickets(mockTickets);
-      } finally {
-        setLoading(false);
+      if (error) {
+        throw new Error(`Error fetching tickets: ${error.message}`);
       }
-    };
 
+      // Transform data to match our Ticket interface
+      const formattedTickets: Ticket[] = data.map(ticket => ({
+        id: ticket.id,
+        name: ticket.users.name,
+        email: ticket.users.email,
+        project: ticket.project,
+        category: ticket.category,
+        description: ticket.description,
+        status: ticket.status,
+        created_at: ticket.created_at,
+        updated_at: ticket.updated_at,
+        user_id: ticket.user_id,
+        title: ticket.title
+      }));
+
+      setTickets(formattedTickets);
+      setFilteredTickets(formattedTickets);
+    } catch (error: any) {
+      console.error("Failed to fetch tickets:", error);
+      toast.error("Failed to load tickets", {
+        description: error.message || "Please try again later"
+      });
+      // Fall back to mock data if fetch fails
+      setTickets(mockTickets);
+      setFilteredTickets(mockTickets);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchTickets();
   }, []);
 
@@ -166,10 +166,15 @@ const Dashboard = () => {
   };
 
   const handleStatusChange = async (ticketId: string, newStatus: TicketStatus) => {
+    console.log(`Dashboard: Changing ticket ${ticketId} status to ${newStatus}`);
+    
     const result = await updateTicketStatus(ticketId, newStatus, tickets, setTickets);
     
     if (result.success) {
       toast.success(`Ticket ${ticketId} status updated to ${newStatus}`);
+      
+      // Refresh the tickets list to ensure we have the latest data
+      fetchTickets();
     } else {
       toast.error("Failed to update ticket status", {
         description: result.error || "Please try again later"
@@ -194,7 +199,8 @@ const Dashboard = () => {
     const newStatus = mapColumnToStatus(destination.droppableId);
     
     if (newStatus) {
-      // Update the ticket status using the same function as handleStatusChange
+      console.log(`Drag-and-drop: Changing ticket ${ticketId} status to ${newStatus}`);
+      // Update the ticket status using the handleStatusChange function
       // This ensures consistency between drag-and-drop and dropdown status changes
       handleStatusChange(ticketId, newStatus);
     }
