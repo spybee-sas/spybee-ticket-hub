@@ -42,3 +42,18 @@ export const getStatusColorClass = (status: TicketStatus): string => {
       return "bg-gray-100 text-gray-800";
   }
 };
+
+/**
+ * Gets the column ID that corresponds to a ticket status
+ * @param status The ticket status
+ * @returns The corresponding column ID for the Kanban board
+ */
+export const getColumnIdFromStatus = (status: TicketStatus): string => {
+  const columnMap: Record<TicketStatus, string> = {
+    "Open": "open-column",
+    "In Progress": "in-progress-column",
+    "Closed": "closed-column"
+  };
+  
+  return columnMap[status];
+};

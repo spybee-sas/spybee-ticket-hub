@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Filter, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import { mapColumnToStatus, getStatusColorClass } from "@/utils/ticketUtils";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -197,15 +198,8 @@ const Dashboard = () => {
     // Get the ticket being dragged
     const ticketId = draggableId;
     
-    // Map droppableId to ticket status
-    const statusMap: Record<string, TicketStatus> = {
-      "open-column": "Open",
-      "in-progress-column": "In Progress",
-      "closed-column": "Closed"
-    };
-    
-    // Get the new status
-    const newStatus = statusMap[destination.droppableId];
+    // Get the new status based on destination column
+    const newStatus = mapColumnToStatus(destination.droppableId);
     
     if (newStatus) {
       // Update the ticket status
