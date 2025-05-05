@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -42,10 +43,9 @@ const LoginForm = () => {
         throw new Error('Authentication failed');
       }
       
-      // Use explicit type parameters for the RPC call
-      // Fix: add both type parameters for the generic
+      // Use both explicit type parameters for the RPC call
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<CheckAdminPasswordResult, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });

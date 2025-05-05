@@ -1,19 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Ticket, TicketComment, TicketStatus, UserType } from "@/types/ticket";
-import { formatDistanceToNow, format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import TicketHeader from "./ticket/TicketHeader";
+import TicketAttachments from "./ticket/TicketAttachments";
+import TicketComments from "./ticket/TicketComments";
 
 interface TicketDetailProps {
   ticket: Ticket;
@@ -22,10 +14,7 @@ interface TicketDetailProps {
 
 const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   const [status, setStatus] = useState<TicketStatus>(ticket.status);
-  const [comment, setComment] = useState("");
   const [comments, setComments] = useState<TicketComment[]>([]);
-  const [isInternal, setIsInternal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch comments from Supabase
   useEffect(() => {
@@ -90,317 +79,30 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
     }
   };
 
-  const handleAddComment = async () => {
-    if (!comment.trim()) return;
-    
-    setIsLoading(true);
-    
-    try {
-      // Get the user ID - for admin, get from localStorage
-      let userId = null;
-      if (isAdmin) {
-        const adminData = localStorage.getItem("spybee_admin");
-        if (adminData) {
-          const admin = JSON.parse(adminData);
-          userId = admin.id;
-        }
-      } else {
-        // For regular users, use the ticket's user ID
-        const { data, error } = await supabase
-          .from('tickets')
-          .select('user_id')
-          .eq('id', ticket.id)
-          .single();
-        
-        if (error) {
-          console.error("Error fetching ticket user ID:", error);
-        } else if (data) {
-          userId = data.user_id;
-        }
-      }
-      
-      if (!userId) {
-        console.log("Fallback: Looking up user ID by email");
-        // Try to get user ID by email as fallback
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', ticket.email)
-          .maybeSingle();
-          
-        if (userError) {
-          console.error("Error in fallback user lookup:", userError);
-        } else if (userData) {
-          userId = userData.id;
-          console.log("Found user ID via email:", userId);
-        }
-      }
-      
-      // If still no userId, use a placeholder (shouldn't normally happen)
-      if (!userId) {
-        console.warn("Could not determine user ID for comment - using placeholder");
-        userId = '00000000-0000-0000-0000-000000000000';
-      }
-      
-      // Determine user_type based on isAdmin flag
-      const userType: UserType = isAdmin ? 'admin' : 'user';
-      
-      console.log("Comment being created with user_type:", userType);
-      
-      // Create the comment data with validated user_type
-      const newCommentData = {
-        ticket_id: ticket.id,
-        user_id: userId,
-        user_type: userType,
-        content: comment,
-        is_internal: isAdmin && isInternal
-      };
-      
-      console.log("Submitting comment with data:", newCommentData);
-      
-      // Insert the comment
-      const { data, error } = await supabase
-        .from('ticket_comments')
-        .insert(newCommentData)
-        .select();
-      
-      if (error) {
-        console.error("Error adding comment:", error);
-        throw new Error(`Error adding comment: ${error.message}`);
-      }
-      
-      if (data && data.length > 0) {
-        // Add the new comment to the state
-        // Ensure user_type is properly validated as 'admin' or 'user'
-        const validatedUserType: UserType = data[0].user_type === 'admin' ? 'admin' : 'user';
-        
-        const newComment: TicketComment = {
-          id: data[0].id,
-          ticket_id: data[0].ticket_id,
-          user: isAdmin ? 'Admin' : ticket.name,
-          content: data[0].content,
-          created_at: data[0].created_at,
-          is_internal: data[0].is_internal,
-          user_type: validatedUserType,
-          user_id: data[0].user_id
-        };
-        
-        setComments(prev => [newComment, ...prev]);
-        setComment("");
-        toast.success("Comment added successfully");
-      }
-    } catch (error: any) {
-      console.error("Error adding comment:", error);
-      toast.error(`Failed to add comment: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Open":
-        return "bg-blue-100 text-blue-800";
-      case "In Progress":
-        return "bg-amber-100 text-amber-800";
-      case "Closed":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "Bug":
-        return "bg-red-100 text-red-800";
-      case "Complaint":
-        return "bg-purple-100 text-purple-800";
-      case "Delivery Issue":
-        return "bg-orange-100 text-orange-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  const handleCommentAdded = (newComment: TicketComment) => {
+    setComments(prev => [newComment, ...prev]);
   };
 
   return (
     <div className="space-y-8">
-      <div className="bg-white rounded-lg shadow-md p-6 border border-border">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-spybee-dark mb-2">
-              {ticket.project}
-            </h2>
-            <p className="text-gray-500 mb-2">ID: {ticket.id}</p>
-            <div className="flex items-center gap-2 mb-4">
-              <Badge className={getCategoryColor(ticket.category)}>
-                {ticket.category}
-              </Badge>
-              <Badge className={getStatusColor(status)}>{status}</Badge>
-            </div>
-          </div>
-          <div className="mt-4 sm:mt-0">
-            <p className="text-sm text-gray-500">
-              Submitted by {ticket.name} ({ticket.email})
-            </p>
-            <p className="text-sm text-gray-500">
-              {format(new Date(ticket.created_at), "PPP")}
-            </p>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="font-semibold mb-2">Description</h3>
-          <p className="text-gray-700 whitespace-pre-line">{ticket.description}</p>
-        </div>
-
-        {ticket.attachments && ticket.attachments.length > 0 && (
-          <div className="mb-6">
-            <h3 className="font-semibold mb-2">Attachments</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ticket.attachments.map((attachment) => (
-                <div key={attachment.id} className="border rounded-md overflow-hidden">
-                  <img
-                    src={attachment.file_url}
-                    alt={attachment.file_name}
-                    className="w-full h-40 object-cover"
-                  />
-                  <div className="p-2 text-sm">
-                    <p className="truncate">{attachment.file_name}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {isAdmin && (
-          <div className="mt-6 pt-6 border-t border-border">
-            <div className="flex items-center gap-4">
-              <h3 className="font-semibold">Update Status</h3>
-              <Select
-                value={status}
-                onValueChange={(value) => handleStatusChange(value as TicketStatus)}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Open">Open</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Comments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            <Textarea
-              placeholder="Add a comment..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="mb-3"
-            />
-            {isAdmin && (
-              <div className="flex items-center mb-3">
-                <input
-                  type="checkbox"
-                  id="internal"
-                  checked={isInternal}
-                  onChange={() => setIsInternal(!isInternal)}
-                  className="mr-2"
-                />
-                <label htmlFor="internal" className="text-sm">
-                  Internal note (only visible to admin)
-                </label>
-              </div>
-            )}
-            <div className="flex justify-end">
-              <Button
-                onClick={handleAddComment}
-                className="bg-spybee-yellow hover:bg-amber-400 text-spybee-dark"
-                disabled={isLoading}
-              >
-                {isLoading ? "Adding..." : "Add Comment"}
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {comments
-              .filter((c) => !c.is_internal || isAdmin)
-              .map((comment) => (
-                <div
-                  key={comment.id}
-                  className={`p-4 rounded-lg border ${
-                    comment.is_internal
-                      ? "bg-amber-50 border-amber-200"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="font-medium">
-                      {comment.user}
-                      {comment.is_internal && (
-                        <span className="ml-2 text-amber-600 text-xs font-normal">
-                          Internal Note
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(comment.created_at), {
-                        addSuffix: true,
-                      })}
-                    </div>
-                  </div>
-                  <p className="text-gray-700">{comment.content}</p>
-                </div>
-              ))}
-
-            {comments.filter((c) => !c.is_internal || isAdmin).length === 0 && (
-              <p className="text-center text-gray-500 py-4">
-                No comments yet. Be the first to add a comment!
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <TicketHeader 
+        ticket={ticket} 
+        status={status} 
+        isAdmin={isAdmin} 
+        onStatusChange={handleStatusChange}
+      />
+      
+      <TicketAttachments attachments={ticket.attachments || []} />
+      
+      <TicketComments 
+        ticketId={ticket.id}
+        comments={comments}
+        userName={ticket.name}
+        isAdmin={isAdmin}
+        onCommentAdded={handleCommentAdded}
+      />
     </div>
   );
-};
-
-// Helper functions
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Open":
-      return "bg-blue-100 text-blue-800";
-    case "In Progress":
-      return "bg-amber-100 text-amber-800";
-    case "Closed":
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const getCategoryColor = (category: string) => {
-  switch (category) {
-    case "Bug":
-      return "bg-red-100 text-red-800";
-    case "Complaint":
-      return "bg-purple-100 text-purple-800";
-    case "Delivery Issue":
-      return "bg-orange-100 text-orange-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
 };
 
 export default TicketDetail;
