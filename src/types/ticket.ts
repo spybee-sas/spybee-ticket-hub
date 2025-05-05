@@ -12,6 +12,9 @@ export interface Ticket {
   description: string;
   status: TicketStatus;
   created_at: string;
+  updated_at?: string;
+  user_id?: string;
+  title?: string;
   attachments?: TicketAttachment[];
 }
 
@@ -29,4 +32,6 @@ export interface TicketComment {
   content: string;
   created_at: string;
   is_internal: boolean;
+  user_type: 'admin' | 'user';
+  user_id?: string;
 }

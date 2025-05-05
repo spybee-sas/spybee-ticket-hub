@@ -30,6 +30,8 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Filter, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -37,17 +39,76 @@ const Dashboard = () => {
   const [filteredTickets, setFilteredTickets] = useState<Ticket[]>(mockTickets);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("");
+  const [userFilter, setUserFilter] = useState<string>("");
+  const [emailDomainFilter, setEmailDomainFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [view, setView] = useState<"table" | "kanban">("table");
+  const [view, setView] = useState<"table" | "kanban">("kanban");
+  const [loading, setLoading] = useState(true);
 
   // Stats
   const openTickets = tickets.filter((t) => t.status === "Open").length;
   const inProgressTickets = tickets.filter((t) => t.status === "In Progress").length;
   const closedTickets = tickets.filter((t) => t.status === "Closed").length;
 
-  // Get unique projects for filter
+  // Get unique values for filters
   const projects = Array.from(new Set(tickets.map((t) => t.project)));
+  const users = Array.from(new Set(tickets.map((t) => t.name)));
+  const emailDomains = Array.from(new Set(tickets.map((t) => {
+    const emailParts = t.email.split('@');
+    return emailParts.length > 1 ? '@' + emailParts[1] : '';
+  }))).filter(domain => domain !== '');
 
+  // Fetch real tickets from Supabase
+  useEffect(() => {
+    const fetchTickets = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('tickets')
+          .select(`
+            *,
+            users!tickets_user_id_fkey (name, email)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw new Error(`Error fetching tickets: ${error.message}`);
+        }
+
+        // Transform data to match our Ticket interface
+        const formattedTickets: Ticket[] = data.map(ticket => ({
+          id: ticket.id,
+          name: ticket.users.name,
+          email: ticket.users.email,
+          project: ticket.project,
+          category: ticket.category,
+          description: ticket.description,
+          status: ticket.status,
+          created_at: ticket.created_at,
+          updated_at: ticket.updated_at,
+          user_id: ticket.user_id,
+          title: ticket.title
+        }));
+
+        setTickets(formattedTickets);
+        setFilteredTickets(formattedTickets);
+      } catch (error: any) {
+        console.error("Failed to fetch tickets:", error);
+        toast.error("Failed to load tickets", {
+          description: error.message || "Please try again later"
+        });
+        // Fall back to mock data if fetch fails
+        setTickets(mockTickets);
+        setFilteredTickets(mockTickets);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, []);
+
+  // Apply filters whenever filter criteria change
   useEffect(() => {
     let result = [...tickets];
     
@@ -59,6 +120,16 @@ const Dashboard = () => {
     // Apply project filter
     if (projectFilter) {
       result = result.filter((t) => t.project === projectFilter);
+    }
+    
+    // Apply user filter
+    if (userFilter) {
+      result = result.filter((t) => t.name === userFilter);
+    }
+    
+    // Apply email domain filter
+    if (emailDomainFilter) {
+      result = result.filter((t) => t.email.endsWith(emailDomainFilter));
     }
     
     // Apply search filter (search in ticket ID, name, email, and description)
@@ -74,7 +145,7 @@ const Dashboard = () => {
     }
     
     setFilteredTickets(result);
-  }, [statusFilter, projectFilter, searchTerm, tickets]);
+  }, [statusFilter, projectFilter, userFilter, emailDomainFilter, searchTerm, tickets]);
 
   const handleLogout = () => {
     localStorage.removeItem("spybee_admin");
@@ -82,13 +153,38 @@ const Dashboard = () => {
     navigate("/admin/login");
   };
 
-  const handleStatusChange = (ticketId: string, newStatus: TicketStatus) => {
-    const updatedTickets = tickets.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
-    );
-    
-    setTickets(updatedTickets);
-    toast.success(`Ticket ${ticketId} status updated to ${newStatus}`);
+  const handleStatusChange = async (ticketId: string, newStatus: TicketStatus) => {
+    try {
+      // Update status in Supabase
+      const { error } = await supabase
+        .from('tickets')
+        .update({ status: newStatus })
+        .eq('id', ticketId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      const updatedTickets = tickets.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
+      );
+      
+      setTickets(updatedTickets);
+      toast.success(`Ticket ${ticketId} status updated to ${newStatus}`);
+    } catch (error: any) {
+      console.error("Failed to update ticket status:", error);
+      toast.error("Failed to update ticket status", {
+        description: error.message || "Please try again later"
+      });
+    }
+  };
+
+  const clearAllFilters = () => {
+    setStatusFilter("all");
+    setProjectFilter("");
+    setUserFilter("");
+    setEmailDomainFilter("");
+    setSearchTerm("");
+    toast.success("All filters cleared");
   };
 
   return (
@@ -157,11 +253,23 @@ const Dashboard = () => {
           
           {/* Filters */}
           <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Filter Tickets</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Filter Tickets</CardTitle>
+                <CardDescription>Use multiple filters to narrow down results</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearAllFilters}
+                className="flex items-center gap-1"
+              >
+                <Filter className="w-4 h-4" />
+                Clear Filters
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <label className="text-sm font-medium block mb-2">
                     Status
@@ -206,6 +314,50 @@ const Dashboard = () => {
                 
                 <div>
                   <label className="text-sm font-medium block mb-2">
+                    User
+                  </label>
+                  <Select
+                    value={userFilter}
+                    onValueChange={setUserFilter}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Users</SelectItem>
+                      {users.map((user) => (
+                        <SelectItem key={user} value={user}>
+                          {user}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium block mb-2">
+                    Email Domain
+                  </label>
+                  <Select
+                    value={emailDomainFilter}
+                    onValueChange={setEmailDomainFilter}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by email domain" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Domains</SelectItem>
+                      {emailDomains.map((domain) => (
+                        <SelectItem key={domain} value={domain}>
+                          {domain}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium block mb-2">
                     Search
                   </label>
                   <Input
@@ -230,19 +382,34 @@ const Dashboard = () => {
             </CardContent>
           </Card>
           
+          {/* Loading state */}
+          {loading && (
+            <div className="my-8 text-center">
+              <div className="flex justify-center">
+                <svg className="animate-spin h-8 w-8 text-spybee-yellow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+              <p className="mt-2 text-gray-600">Loading tickets...</p>
+            </div>
+          )}
+          
           {/* Tickets Views */}
-          {view === "table" ? (
-            <TicketsTable 
-              tickets={filteredTickets} 
-              handleStatusChange={handleStatusChange} 
-              navigate={navigate} 
-            />
-          ) : (
-            <KanbanBoard 
-              tickets={filteredTickets} 
-              handleStatusChange={handleStatusChange} 
-              navigate={navigate}
-            />
+          {!loading && (
+            view === "table" ? (
+              <TicketsTable 
+                tickets={filteredTickets} 
+                handleStatusChange={handleStatusChange} 
+                navigate={navigate} 
+              />
+            ) : (
+              <KanbanBoard 
+                tickets={filteredTickets} 
+                handleStatusChange={handleStatusChange} 
+                navigate={navigate}
+              />
+            )
           )}
         </main>
       </div>
