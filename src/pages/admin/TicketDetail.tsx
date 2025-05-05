@@ -45,7 +45,7 @@ const AdminTicketDetail = () => {
         return;
       }
       
-      console.log("Admin: Retrieved ticket data:", ticketData);
+      console.log("Admin: Retrieved ticket data with status:", ticketData.status);
       
       // Fetch attachments if any
       const { data: attachmentsData, error: attachmentsError } = await supabase
@@ -68,7 +68,8 @@ const AdminTicketDetail = () => {
         status: ticketData.status,
         created_at: ticketData.created_at,
         updated_at: ticketData.updated_at,
-        attachments: attachmentsData || []
+        attachments: attachmentsData || [],
+        user_id: ticketData.user_id
       };
       
       setTicket(formattedTicket);

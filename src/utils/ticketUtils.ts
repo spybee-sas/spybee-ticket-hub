@@ -74,37 +74,55 @@ export const updateTicketStatus = async (
   setTickets: (tickets: any[]) => void
 ) => {
   try {
-    console.log(`Updating ticket ${ticketId} status to ${newStatus}...`);
+    console.log(`Starting status update operation for ticket ${ticketId} to ${newStatus}...`);
     
-    // First, perform the database update operation
+    // First, update the UI optimistically
+    const updatedTickets = currentTickets.map((ticket) =>
+      ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
+    );
+    
+    // Update UI immediately for better UX
+    setTickets(updatedTickets);
+    
+    // Then, perform the database update operation
     const timestamp = new Date().toISOString();
+    
+    console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
+    
+    // Explicitly log what we're sending to Supabase
+    const updateData = { 
+      status: newStatus,
+      updated_at: timestamp
+    };
+    console.log('Update data:', updateData);
+    
     const { data, error } = await supabase
       .from('tickets')
-      .update({ 
-        status: newStatus,
-        updated_at: timestamp
-      })
+      .update(updateData)
       .eq('id', ticketId)
       .select('*');
     
     if (error) {
+      // If there's an error, revert the optimistic update
       console.error('Database update error:', error);
+      setTickets(currentTickets); // Revert to previous state
       throw error;
     }
     
     console.log('Supabase update response:', data);
     
-    // Only update local state after successful DB update
+    // Update local state with freshly fetched data if needed
     if (data && data.length > 0) {
-      // Update local state with the data directly from the database response
-      const updatedTickets = currentTickets.map((ticket) =>
-        ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: timestamp } : ticket
+      console.log('Database update successful, updating UI with confirmed data');
+      
+      // This is just an additional confirmation that DB and UI are in sync
+      const refreshedTickets = currentTickets.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, status: data[0].status, updated_at: data[0].updated_at } : ticket
       );
       
-      setTickets(updatedTickets);
-      console.log('Local state updated with new status');
+      setTickets(refreshedTickets);
     } else {
-      console.warn('No data returned from update operation');
+      console.warn('No data returned from update operation - this is unusual');
     }
     
     return { success: true, data };

@@ -108,13 +108,15 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   };
 
   const handleStatusChange = async (newStatus: TicketStatus) => {
-    console.log(`TicketDetail: Changing status to ${newStatus}`);
+    console.log(`TicketDetail: Changing status from ${status} to ${newStatus} for ticket ${ticket.id}`);
     
-    // Use the centralized function for updating ticket status
+    // Create a temporary array with just this ticket for the updateTicketStatus function
+    const singleTicketArray = [ticketData];
+    
     const result = await updateTicketStatus(
       ticket.id, 
       newStatus, 
-      [ticketData], 
+      singleTicketArray, 
       (updatedTickets) => {
         if (updatedTickets.length > 0) {
           setTicketData(updatedTickets[0]);
@@ -125,6 +127,10 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
     
     if (result.success) {
       toast.success(`Ticket status updated to ${newStatus}`);
+      // Force a refresh to ensure we have the latest data
+      setTimeout(() => {
+        fetchTicketData();
+      }, 500);
     } else {
       toast.error("Failed to update ticket status");
       // Force a refresh of the ticket data if the update failed

@@ -70,7 +70,7 @@ const TicketStatus = () => {
         throw new Error(`Error finding tickets: ${ticketsError.message}`);
       }
       
-      console.log("Retrieved tickets:", ticketsData);
+      console.log("Retrieved tickets with statuses:", ticketsData.map(t => ({ id: t.id, status: t.status })));
       
       // Transform the data to match our Ticket type
       const formattedTickets: Ticket[] = ticketsData.map(ticket => ({
@@ -82,7 +82,8 @@ const TicketStatus = () => {
         description: ticket.description,
         status: ticket.status,
         created_at: ticket.created_at,
-        updated_at: ticket.updated_at
+        updated_at: ticket.updated_at,
+        user_id: ticket.user_id
       }));
       
       setTickets(formattedTickets);
