@@ -90,25 +90,22 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
-    // Make sure to await the database update
+    // Update the database and wait for the result
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
-      .eq('id', ticketId)
-      .select();  // Add select() to return the updated row
+      .eq('id', ticketId);
     
     if (error) {
       console.error('Database update error:', error);
       throw error;
     }
     
-    console.log('Database update succeeded:', data);
+    // Even if no data is returned (which is normal for updates), consider it a success
+    // as long as there's no error
+    console.log('Database update succeeded without errors');
     
-    if (!data || data.length === 0) {
-      console.warn('Update succeeded but no data returned from Supabase');
-    }
-    
-    // Update the UI after successful database update
+    // Update the UI optimistically after successful database update
     const updatedTickets = currentTickets.map((ticket) =>
       ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: timestamp } : ticket
     );
@@ -119,10 +116,13 @@ export const updateTicketStatus = async (
     // If a refresh callback was provided, call it to ensure fresh data
     if (refreshCallback) {
       console.log('Refreshing data after successful update...');
-      await refreshCallback();
+      // Wait a short delay before refreshing to ensure the database update has propagated
+      setTimeout(async () => {
+        await refreshCallback();
+      }, 500);
     }
     
-    return { success: true, data };
+    return { success: true };
   } catch (error: any) {
     console.error("Failed to update ticket status:", error);
     

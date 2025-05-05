@@ -34,10 +34,7 @@ export const handleTicketStatusChange = async (
       toast.error("Failed to update ticket status", {
         description: result.error || "Please try again later"
       });
-      // Refresh tickets to ensure UI is in sync with database
-      if (fetchTickets) {
-        await fetchTickets();
-      }
+      // Don't forcefully refresh tickets immediately as it might overwrite optimistic updates
       return false;
     }
   } catch (error: any) {
@@ -45,10 +42,6 @@ export const handleTicketStatusChange = async (
     toast.error("Error updating ticket status", {
       description: error.message || "Please try again later"
     });
-    // Refresh tickets to ensure UI is in sync with database
-    if (fetchTickets) {
-      await fetchTickets();
-    }
     return false;
   }
 };

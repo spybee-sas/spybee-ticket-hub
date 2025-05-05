@@ -22,10 +22,12 @@ const KanbanBoard = ({
   const [localTickets, setLocalTickets] = useState<Ticket[]>(tickets);
   const [processingDrag, setProcessingDrag] = useState(false);
 
-  // Update local tickets when parent tickets change
+  // Update local tickets when parent tickets change, but only if not processing a drag
   useEffect(() => {
-    setLocalTickets(tickets);
-  }, [tickets]);
+    if (!processingDrag) {
+      setLocalTickets(tickets);
+    }
+  }, [tickets, processingDrag]);
 
   // Group tickets by status
   const openTickets = localTickets.filter(ticket => ticket.status === "Open");
@@ -58,16 +60,26 @@ const KanbanBoard = ({
       // Then update the backend
       const success = await handleStatusChange(draggableId, newStatus);
       
-      // If the backend update failed, revert the local state
+      // Only revert the local state if the backend update explicitly failed
       if (!success) {
-        setLocalTickets(tickets); // Revert to original tickets
+        // Find the original status from the parent tickets array
+        const originalTicket = tickets.find(t => t.id === draggableId);
+        if (originalTicket) {
+          const revertedTickets = localTickets.map(ticket => 
+            ticket.id === draggableId ? { ...ticket, status: originalTicket.status } : ticket
+          );
+          setLocalTickets(revertedTickets);
+        }
       }
       
-      setProcessingDrag(false);
+      // Clear the processing state after a short delay to prevent immediate overwrite from parent props
+      setTimeout(() => {
+        setProcessingDrag(false);
+      }, 1000);
     }
   };
 
-  if (isRefreshing || processingDrag) {
+  if (isRefreshing && !processingDrag) {
     return <LoadingState message="Updating board..." />;
   }
 
