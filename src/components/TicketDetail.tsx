@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Ticket, TicketComment, TicketStatus } from "@/types/ticket";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockComments, getTicketComments } from "@/lib/mockData";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TicketDetailProps {
   ticket: Ticket;
@@ -24,31 +24,138 @@ interface TicketDetailProps {
 const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   const [status, setStatus] = useState<TicketStatus>(ticket.status);
   const [comment, setComment] = useState("");
-  const [comments, setComments] = useState<TicketComment[]>(
-    getTicketComments(ticket.id)
-  );
+  const [comments, setComments] = useState<TicketComment[]>([]);
   const [isInternal, setIsInternal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleStatusChange = (newStatus: TicketStatus) => {
-    setStatus(newStatus);
-    toast.success(`Ticket status updated to ${newStatus}`);
+  // Fetch comments from Supabase
+  useEffect(() => {
+    fetchComments();
+  }, [ticket.id]);
+
+  const fetchComments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ticket_comments')
+        .select('*')
+        .eq('ticket_id', ticket.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw new Error(`Error fetching comments: ${error.message}`);
+      }
+      
+      if (data) {
+        // Transform the data to match our TicketComment type
+        const formattedComments: TicketComment[] = data.map(comment => ({
+          id: comment.id,
+          ticket_id: comment.ticket_id,
+          user: comment.user_type === 'admin' ? 'Admin' : ticket.name,
+          content: comment.content,
+          created_at: comment.created_at,
+          is_internal: comment.is_internal
+        }));
+        
+        setComments(formattedComments);
+      }
+    } catch (error: any) {
+      console.error("Error fetching comments:", error);
+      toast.error("Failed to load comments");
+    }
   };
 
-  const handleAddComment = () => {
+  const handleStatusChange = async (newStatus: TicketStatus) => {
+    try {
+      // Update ticket status in Supabase
+      const { error } = await supabase
+        .from('tickets')
+        .update({ status: newStatus })
+        .eq('id', ticket.id);
+      
+      if (error) {
+        throw new Error(`Error updating status: ${error.message}`);
+      }
+      
+      setStatus(newStatus);
+      toast.success(`Ticket status updated to ${newStatus}`);
+    } catch (error: any) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update ticket status");
+    }
+  };
+
+  const handleAddComment = async () => {
     if (!comment.trim()) return;
-
-    const newComment: TicketComment = {
-      id: `C-${Date.now()}`,
-      ticket_id: ticket.id,
-      user: isAdmin ? "Admin" : ticket.name,
-      content: comment,
-      created_at: new Date().toISOString(),
-      is_internal: isInternal,
-    };
-
-    setComments((prev) => [newComment, ...prev]);
-    setComment("");
-    toast.success("Comment added successfully");
+    
+    setIsLoading(true);
+    
+    try {
+      // Get the user type (admin or regular user)
+      const userType = isAdmin ? 'admin' : 'user';
+      
+      // Get the user ID - for admin, get from localStorage
+      let userId;
+      if (isAdmin) {
+        const adminData = localStorage.getItem("spybee_admin");
+        if (adminData) {
+          const admin = JSON.parse(adminData);
+          userId = admin.id;
+        }
+      } else {
+        // For regular users, use the ticket's user ID
+        const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', ticket.email)
+          .single();
+        
+        if (error || !data) {
+          console.error("Error fetching user ID:", error);
+          userId = null; // Fallback
+        } else {
+          userId = data.id;
+        }
+      }
+      
+      // Create the new comment in Supabase
+      const newCommentData = {
+        ticket_id: ticket.id,
+        user_id: userId || '00000000-0000-0000-0000-000000000000', // Fallback ID if not found
+        user_type: userType,
+        content: comment,
+        is_internal: isAdmin && isInternal
+      };
+      
+      const { data, error } = await supabase
+        .from('ticket_comments')
+        .insert(newCommentData)
+        .select();
+      
+      if (error) {
+        throw new Error(`Error adding comment: ${error.message}`);
+      }
+      
+      if (data && data.length > 0) {
+        // Add the new comment to the state
+        const newComment: TicketComment = {
+          id: data[0].id,
+          ticket_id: data[0].ticket_id,
+          user: userType === 'admin' ? 'Admin' : ticket.name,
+          content: data[0].content,
+          created_at: data[0].created_at,
+          is_internal: data[0].is_internal
+        };
+        
+        setComments(prev => [newComment, ...prev]);
+        setComment("");
+        toast.success("Comment added successfully");
+      }
+    } catch (error: any) {
+      console.error("Error adding comment:", error);
+      toast.error("Failed to add comment");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -180,8 +287,9 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
               <Button
                 onClick={handleAddComment}
                 className="bg-spybee-yellow hover:bg-amber-400 text-spybee-dark"
+                disabled={isLoading}
               >
-                Add Comment
+                {isLoading ? "Adding..." : "Add Comment"}
               </Button>
             </div>
           </div>
