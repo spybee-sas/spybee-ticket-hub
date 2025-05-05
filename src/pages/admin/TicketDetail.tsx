@@ -21,7 +21,10 @@ const AdminTicketDetail = () => {
   }, [id]);
 
   const fetchTicket = async (ticketId: string) => {
+    setLoading(true);
     try {
+      console.log("Admin: Fetching ticket detail for ID:", ticketId);
+      
       // Fetch ticket data from Supabase
       const { data: ticketData, error: ticketError } = await supabase
         .from('tickets')
@@ -41,6 +44,8 @@ const AdminTicketDetail = () => {
         setLoading(false);
         return;
       }
+      
+      console.log("Admin: Retrieved ticket data:", ticketData);
       
       // Fetch attachments if any
       const { data: attachmentsData, error: attachmentsError } = await supabase
@@ -62,6 +67,7 @@ const AdminTicketDetail = () => {
         description: ticketData.description,
         status: ticketData.status,
         created_at: ticketData.created_at,
+        updated_at: ticketData.updated_at,
         attachments: attachmentsData || []
       };
       
@@ -74,12 +80,6 @@ const AdminTicketDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Fix the LoginForm TypeScript error
-  const fixTypeScriptError = () => {
-    // This is a placeholder function to reference in the PR
-    // The actual fix is in the LoginForm.tsx file
   };
 
   if (loading) {

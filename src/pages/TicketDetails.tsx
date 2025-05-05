@@ -23,7 +23,10 @@ const TicketDetails = () => {
   }, [id]);
 
   const fetchTicket = async (ticketId: string) => {
+    setLoading(true);
     try {
+      console.log("Fetching ticket detail for ID:", ticketId);
+      
       // Fetch ticket data from Supabase
       const { data: ticketData, error: ticketError } = await supabase
         .from('tickets')
@@ -43,6 +46,8 @@ const TicketDetails = () => {
         setLoading(false);
         return;
       }
+      
+      console.log("Retrieved ticket data:", ticketData);
       
       // Fetch attachments if any
       const { data: attachmentsData, error: attachmentsError } = await supabase
@@ -64,6 +69,7 @@ const TicketDetails = () => {
         description: ticketData.description,
         status: ticketData.status,
         created_at: ticketData.created_at,
+        updated_at: ticketData.updated_at,
         attachments: attachmentsData || []
       };
       

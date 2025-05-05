@@ -33,6 +33,8 @@ const TicketStatus = () => {
     setLoading(true);
     
     try {
+      console.log("Searching tickets for email:", email);
+      
       // First find the user
       const { data: users, error: userError } = await supabase
         .from('users')
@@ -61,11 +63,14 @@ const TicketStatus = () => {
           *,
           users!tickets_user_id_fkey (name, email)
         `)
-        .in('user_id', userIds);
+        .in('user_id', userIds)
+        .order('created_at', { ascending: false });
       
       if (ticketsError) {
         throw new Error(`Error finding tickets: ${ticketsError.message}`);
       }
+      
+      console.log("Retrieved tickets:", ticketsData);
       
       // Transform the data to match our Ticket type
       const formattedTickets: Ticket[] = ticketsData.map(ticket => ({
@@ -76,7 +81,8 @@ const TicketStatus = () => {
         category: ticket.category,
         description: ticket.description,
         status: ticket.status,
-        created_at: ticket.created_at
+        created_at: ticket.created_at,
+        updated_at: ticket.updated_at
       }));
       
       setTickets(formattedTickets);

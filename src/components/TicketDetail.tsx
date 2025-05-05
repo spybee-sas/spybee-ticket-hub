@@ -17,24 +17,24 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   const [status, setStatus] = useState<TicketStatus>(ticket.status);
   const [comments, setComments] = useState<TicketComment[]>([]);
   const [ticketData, setTicketData] = useState<Ticket>(ticket);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch comments from Supabase
+  // Always fetch fresh ticket data when the component mounts
   useEffect(() => {
+    fetchTicketData();
     fetchComments();
   }, [ticket.id]);
 
-  // Re-fetch ticket data when status changes to ensure we have the latest data
-  useEffect(() => {
-    if (status !== ticket.status) {
-      fetchTicketData();
-    }
-  }, [status]);
-
   const fetchTicketData = async () => {
+    setLoading(true);
     try {
+      console.log("Fetching fresh ticket data for ID:", ticket.id);
       const { data, error } = await supabase
         .from('tickets')
-        .select('*')
+        .select(`
+          *,
+          users!tickets_user_id_fkey (name, email)
+        `)
         .eq('id', ticket.id)
         .single();
       
@@ -43,14 +43,29 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       }
       
       if (data) {
-        setTicketData({
-          ...ticketData,
+        console.log("Received fresh ticket data:", data);
+        
+        // Create a properly formatted ticket object
+        const freshTicket: Ticket = {
+          id: data.id,
+          name: data.users.name,
+          email: data.users.email,
+          project: data.project,
+          category: data.category,
+          description: data.description,
           status: data.status,
-          updated_at: data.updated_at
-        });
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          user_id: data.user_id
+        };
+        
+        setTicketData(freshTicket);
+        setStatus(data.status);
       }
     } catch (error) {
       console.error("Error fetching ticket data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,16 +125,20 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
     
     if (result.success) {
       toast.success(`Ticket status updated to ${newStatus}`);
-      // Force a refresh of the ticket data to ensure we have the latest from DB
-      fetchTicketData();
     } else {
       toast.error("Failed to update ticket status");
+      // Force a refresh of the ticket data if the update failed
+      fetchTicketData();
     }
   };
 
   const handleCommentAdded = (newComment: TicketComment) => {
     setComments(prev => [newComment, ...prev]);
   };
+
+  if (loading) {
+    return <div className="text-center py-4">Loading ticket details...</div>;
+  }
 
   return (
     <div className="space-y-8">

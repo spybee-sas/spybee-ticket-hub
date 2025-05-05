@@ -73,22 +73,16 @@ export const updateTicketStatus = async (
   currentTickets: any[],
   setTickets: (tickets: any[]) => void
 ) => {
-  // First update local state for optimistic UI
-  const updatedTickets = currentTickets.map((ticket) =>
-    ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: new Date().toISOString() } : ticket
-  );
-  
-  setTickets(updatedTickets);
-  
   try {
     console.log(`Updating ticket ${ticketId} status to ${newStatus}...`);
     
-    // Update status in Supabase
+    // First, perform the database update operation
+    const timestamp = new Date().toISOString();
     const { data, error } = await supabase
       .from('tickets')
       .update({ 
         status: newStatus,
-        updated_at: new Date().toISOString()
+        updated_at: timestamp
       })
       .eq('id', ticketId)
       .select('*');
@@ -98,18 +92,24 @@ export const updateTicketStatus = async (
       throw error;
     }
     
-    console.log('Update response data:', data);
+    console.log('Supabase update response:', data);
     
-    if (!data || data.length === 0) {
+    // Only update local state after successful DB update
+    if (data && data.length > 0) {
+      // Update local state with the data directly from the database response
+      const updatedTickets = currentTickets.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: timestamp } : ticket
+      );
+      
+      setTickets(updatedTickets);
+      console.log('Local state updated with new status');
+    } else {
       console.warn('No data returned from update operation');
     }
     
     return { success: true, data };
   } catch (error: any) {
     console.error("Failed to update ticket status:", error);
-    
-    // Revert local state on error
-    setTickets(currentTickets);
     
     return { 
       success: false, 
