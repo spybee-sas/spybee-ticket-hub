@@ -1,26 +1,13 @@
 
-export const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Open":
-      return "bg-blue-100 text-blue-800";
-    case "In Progress":
-      return "bg-amber-100 text-amber-800";
-    case "Closed":
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-gray-100 text-gray-800";
+import { UserType } from "@/types/ticket";
+
+// Function to validate user type
+export const validateUserType = (userType: string): UserType => {
+  if (userType === "admin" || userType === "user") {
+    return userType;
   }
+  // Default to "user" if not valid
+  return "user";
 };
 
-export const getCategoryColor = (category: string) => {
-  switch (category) {
-    case "Bug":
-      return "bg-red-100 text-red-800";
-    case "Complaint":
-      return "bg-purple-100 text-purple-800";
-    case "Delivery Issue":
-      return "bg-orange-100 text-orange-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
+// Add additional ticket utility functions here if needed
