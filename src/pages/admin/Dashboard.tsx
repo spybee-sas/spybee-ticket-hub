@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/AdminLayout";
@@ -32,6 +31,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Filter, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -181,6 +181,35 @@ const Dashboard = () => {
       toast.error("Failed to update ticket status", {
         description: error.message || "Please try again later"
       });
+    }
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+    
+    // If dropped outside a droppable area or dropped in the same place
+    if (!destination || 
+        (source.droppableId === destination.droppableId && 
+         source.index === destination.index)) {
+      return;
+    }
+    
+    // Get the ticket being dragged
+    const ticketId = draggableId;
+    
+    // Map droppableId to ticket status
+    const statusMap: Record<string, TicketStatus> = {
+      "open-column": "Open",
+      "in-progress-column": "In Progress",
+      "closed-column": "Closed"
+    };
+    
+    // Get the new status
+    const newStatus = statusMap[destination.droppableId];
+    
+    if (newStatus) {
+      // Update the ticket status
+      handleStatusChange(ticketId, newStatus);
     }
   };
 
@@ -410,11 +439,13 @@ const Dashboard = () => {
                 navigate={navigate} 
               />
             ) : (
-              <KanbanBoard 
-                tickets={filteredTickets} 
-                handleStatusChange={handleStatusChange} 
-                navigate={navigate}
-              />
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <KanbanBoard 
+                  tickets={filteredTickets} 
+                  handleStatusChange={handleStatusChange} 
+                  navigate={navigate}
+                />
+              </DragDropContext>
             )
           )}
         </main>
@@ -524,7 +555,7 @@ const TicketsTable = ({
   );
 };
 
-// Kanban Board Component
+// Kanban Board Component (updated with drag and drop)
 const KanbanBoard = ({ 
   tickets, 
   handleStatusChange, 
@@ -548,6 +579,7 @@ const KanbanBoard = ({
         handleStatusChange={handleStatusChange}
         navigate={navigate}
         columnColor="blue"
+        droppableId="open-column"
       />
       
       {/* In Progress Column */}
@@ -557,6 +589,7 @@ const KanbanBoard = ({
         handleStatusChange={handleStatusChange}
         navigate={navigate}
         columnColor="amber"
+        droppableId="in-progress-column"
       />
       
       {/* Closed Column */}
@@ -566,24 +599,27 @@ const KanbanBoard = ({
         handleStatusChange={handleStatusChange}
         navigate={navigate}
         columnColor="green"
+        droppableId="closed-column"
       />
     </div>
   );
 };
 
-// Kanban Column Component
+// Kanban Column Component (updated with drag and drop)
 const KanbanColumn = ({ 
   title, 
   tickets, 
   handleStatusChange, 
   navigate,
-  columnColor
+  columnColor,
+  droppableId
 }: { 
   title: string; 
   tickets: Ticket[]; 
   handleStatusChange: (id: string, status: TicketStatus) => void;
   navigate: (path: string) => void;
   columnColor: "blue" | "amber" | "green";
+  droppableId: string;
 }) => {
   return (
     <Card className="h-full">
@@ -596,69 +632,93 @@ const KanbanColumn = ({
         </div>
       </CardHeader>
       <CardContent className="p-4 max-h-[600px] overflow-y-auto">
-        {tickets.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No tickets in this column
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {tickets.map((ticket) => (
-              <Card key={ticket.id} className="shadow-sm hover:shadow transition-all">
-                <CardHeader className="p-3 pb-2">
-                  <div className="flex justify-between">
-                    <span className="text-xs font-medium text-gray-500">#{ticket.id}</span>
-                    <span
-                      className={`inline-block px-2 py-1 text-xs rounded-full ${
-                        ticket.category === "Bug"
-                          ? "bg-red-100 text-red-800"
-                          : ticket.category === "Complaint"
-                          ? "bg-purple-100 text-purple-800"
-                          : ticket.category === "Delivery Issue"
-                          ? "bg-orange-100 text-orange-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {ticket.category}
-                    </span>
-                  </div>
-                  <CardTitle className="text-sm mt-1">{ticket.project}</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className="text-xs text-gray-600 mb-2">
-                    {ticket.name} • {ticket.email}
-                  </div>
-                  <p className="text-sm line-clamp-2 mb-3">
-                    {ticket.description.substring(0, 100)}
-                    {ticket.description.length > 100 ? "..." : ""}
-                  </p>
-                  <div className="flex justify-between items-center mt-2">
-                    <Select
-                      value={ticket.status}
-                      onValueChange={(value) => handleStatusChange(ticket.id, value as TicketStatus)}
-                    >
-                      <SelectTrigger className="h-7 text-xs w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Open">Open</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Closed">Closed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs"
-                      onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
-                    >
-                      View →
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        <Droppable droppableId={droppableId}>
+          {(provided) => (
+            <div 
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="space-y-3 min-h-[50px]"
+            >
+              {tickets.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No tickets in this column
+                </div>
+              ) : (
+                tickets.map((ticket, index) => (
+                  <Draggable 
+                    key={ticket.id} 
+                    draggableId={ticket.id} 
+                    index={index}
+                  >
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`${snapshot.isDragging ? 'opacity-75' : ''}`}
+                      >
+                        <Card className="shadow-sm hover:shadow transition-all">
+                          <CardHeader className="p-3 pb-2">
+                            <div className="flex justify-between">
+                              <span className="text-xs font-medium text-gray-500">#{ticket.id}</span>
+                              <span
+                                className={`inline-block px-2 py-1 text-xs rounded-full ${
+                                  ticket.category === "Bug"
+                                    ? "bg-red-100 text-red-800"
+                                    : ticket.category === "Complaint"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : ticket.category === "Delivery Issue"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {ticket.category}
+                              </span>
+                            </div>
+                            <CardTitle className="text-sm mt-1">{ticket.project}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                            <div className="text-xs text-gray-600 mb-2">
+                              {ticket.name} • {ticket.email}
+                            </div>
+                            <p className="text-sm line-clamp-2 mb-3">
+                              {ticket.description.substring(0, 100)}
+                              {ticket.description.length > 100 ? "..." : ""}
+                            </p>
+                            <div className="flex justify-between items-center mt-2">
+                              <Select
+                                value={ticket.status}
+                                onValueChange={(value) => handleStatusChange(ticket.id, value as TicketStatus)}
+                              >
+                                <SelectTrigger className="h-7 text-xs w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Open">Open</SelectItem>
+                                  <SelectItem value="In Progress">In Progress</SelectItem>
+                                  <SelectItem value="Closed">Closed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs"
+                                onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
+                              >
+                                View →
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                  </Draggable>
+                ))
+              )}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
       </CardContent>
     </Card>
   );

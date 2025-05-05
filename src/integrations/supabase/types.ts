@@ -203,7 +203,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_admin_password: {
+        Args: { admin_email: string; admin_password: string }
+        Returns: boolean
+      }
     }
     Enums: {
       ticket_category: "Bug" | "Complaint" | "Delivery Issue" | "Other"
