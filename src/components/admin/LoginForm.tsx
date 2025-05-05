@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Define the correct types for the RPC function
 type CheckAdminPasswordParams = {
@@ -17,6 +18,7 @@ type CheckAdminPasswordResult = boolean;
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +27,7 @@ const LoginForm = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast.error("Please enter both email and password");
+      toast.error(t('login.emptyFields'));
       return;
     }
     
@@ -45,7 +47,7 @@ const LoginForm = () => {
       
       // Call the RPC function with the correct type parameters
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<CheckAdminPasswordResult, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
@@ -62,11 +64,11 @@ const LoginForm = () => {
         isAdmin: true 
       }));
       
-      toast.success("Login successful!");
+      toast.success(t('login.success'));
       navigate("/admin/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Invalid credentials. Please try again.");
+      toast.error(t('login.error'));
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +78,7 @@ const LoginForm = () => {
     <form onSubmit={handleLogin} className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="email" className="text-sm font-medium">
-          Email
+          {t('login.email')}
         </label>
         <Input
           id="email"
@@ -90,7 +92,7 @@ const LoginForm = () => {
       
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-medium">
-          Password
+          {t('login.password')}
         </label>
         <Input
           id="password"
@@ -107,7 +109,7 @@ const LoginForm = () => {
         className="w-full bg-spybee-dark hover:bg-black text-white"
         disabled={isLoading}
       >
-        {isLoading ? "Logging in..." : "Login"}
+        {isLoading ? t('login.logging') : t('login.button')}
       </Button>
     </form>
   );

@@ -1,9 +1,12 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import LanguageToggle from './LanguageToggle';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const NavBar = () => {
   const location = useLocation();
+  const { t } = useLanguage();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -30,7 +33,7 @@ const NavBar = () => {
                 isActive('/') ? "text-spybee-yellow" : "text-spybee-dark"
               )}
             >
-              Home
+              {t('nav.home')}
             </Link>
             <Link 
               to="/create-ticket" 
@@ -39,7 +42,7 @@ const NavBar = () => {
                 isActive('/create-ticket') ? "text-spybee-yellow" : "text-spybee-dark"
               )}
             >
-              Create Ticket
+              {t('nav.createTicket')}
             </Link>
             <Link 
               to="/ticket-status" 
@@ -48,12 +51,13 @@ const NavBar = () => {
                 isActive('/ticket-status') ? "text-spybee-yellow" : "text-spybee-dark"
               )}
             >
-              Check Status
+              {t('nav.checkStatus')}
             </Link>
           </div>
           
-          {/* Admin Link */}
-          <div>
+          {/* Language Toggle and Admin Link */}
+          <div className="flex items-center space-x-4">
+            <LanguageToggle />
             <Link 
               to="/admin/login" 
               className={cn(
@@ -61,7 +65,7 @@ const NavBar = () => {
                 location.pathname.startsWith('/admin') ? "text-spybee-yellow" : "text-spybee-dark"
               )}
             >
-              Admin
+              {t('nav.admin')}
             </Link>
           </div>
         </div>

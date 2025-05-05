@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoginForm from "@/components/admin/LoginForm";
 import SignupForm from "@/components/admin/SignupForm";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState<string>("login");
+  const { t } = useLanguage();
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -20,7 +22,7 @@ const Login = () => {
               <div className="w-12 h-12 bg-spybee-yellow rounded-full mx-auto mb-4 flex items-center justify-center">
                 <span className="font-bold text-lg text-spybee-dark">SB</span>
               </div>
-              <CardTitle className="text-2xl">Admin Portal</CardTitle>
+              <CardTitle className="text-2xl">{t('admin.portal')}</CardTitle>
             </CardHeader>
             <CardContent>
               <Tabs 
@@ -30,8 +32,8 @@ const Login = () => {
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  <TabsTrigger value="login">{t('admin.login')}</TabsTrigger>
+                  <TabsTrigger value="signup">{t('admin.signup')}</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="login">

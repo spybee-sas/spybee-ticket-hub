@@ -2,8 +2,11 @@
 import { Link } from "react-router-dom";
 import NavBar from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Index = () => {
+  const { t } = useLanguage();
+  
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar />
@@ -15,20 +18,20 @@ const Index = () => {
             <div className="flex flex-col md:flex-row items-center">
               <div className="md:w-1/2 mb-8 md:mb-0">
                 <h1 className="text-4xl md:text-5xl font-bold text-spybee-dark mb-4">
-                  Spybee Support Center
+                  {t('index.title')}
                 </h1>
                 <p className="text-lg text-gray-600 mb-8 max-w-md">
-                  Need assistance with your Spybee project? Create a support ticket and our team will help you resolve any issues quickly.
+                  {t('index.subtitle')}
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <Link to="/create-ticket">
                     <Button className="bg-spybee-yellow text-spybee-dark hover:bg-amber-400 font-medium text-lg">
-                      Create a Ticket
+                      {t('index.createTicket')}
                     </Button>
                   </Link>
                   <Link to="/ticket-status">
                     <Button variant="outline" className="border-spybee-yellow text-spybee-dark font-medium text-lg">
-                      Track Your Ticket
+                      {t('index.trackTicket')}
                     </Button>
                   </Link>
                 </div>
@@ -41,7 +44,7 @@ const Index = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <h3 className="font-semibold text-lg">Fast & Easy Process</h3>
+                    <h3 className="font-semibold text-lg">{t('index.fastProcess')}</h3>
                   </div>
                   <div className="flex items-center mb-6">
                     <div className="w-8 h-8 bg-spybee-yellow rounded-full flex items-center justify-center mr-3">
@@ -49,7 +52,7 @@ const Index = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h3 className="font-semibold text-lg">Real-time Updates</h3>
+                    <h3 className="font-semibold text-lg">{t('index.realTime')}</h3>
                   </div>
                   <div className="flex items-center">
                     <div className="w-8 h-8 bg-spybee-yellow rounded-full flex items-center justify-center mr-3">
@@ -57,7 +60,7 @@ const Index = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
                       </svg>
                     </div>
-                    <h3 className="font-semibold text-lg">Direct Communication</h3>
+                    <h3 className="font-semibold text-lg">{t('index.directComm')}</h3>
                   </div>
                 </div>
               </div>
@@ -69,7 +72,7 @@ const Index = () => {
         <section className="py-16 bg-white">
           <div className="spybee-container">
             <h2 className="text-3xl font-bold text-center text-spybee-dark mb-12">
-              How It Works
+              {t('index.howItWorks')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Step 1 */}
@@ -77,9 +80,9 @@ const Index = () => {
                 <div className="w-16 h-16 bg-spybee-yellow rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-xl font-bold text-spybee-dark">1</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Create a Ticket</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('index.step1Title')}</h3>
                 <p className="text-gray-600">
-                  Fill out our simple form with details about your issue or question.
+                  {t('index.step1Desc')}
                 </p>
               </div>
               
@@ -88,9 +91,9 @@ const Index = () => {
                 <div className="w-16 h-16 bg-spybee-yellow rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-xl font-bold text-spybee-dark">2</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">We Review</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('index.step2Title')}</h3>
                 <p className="text-gray-600">
-                  Our support team reviews your ticket and begins working on a solution.
+                  {t('index.step2Desc')}
                 </p>
               </div>
               
@@ -99,9 +102,9 @@ const Index = () => {
                 <div className="w-16 h-16 bg-spybee-yellow rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-xl font-bold text-spybee-dark">3</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Get Resolution</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('index.step3Title')}</h3>
                 <p className="text-gray-600">
-                  We'll keep you updated and work with you until your issue is resolved.
+                  {t('index.step3Desc')}
                 </p>
               </div>
             </div>
@@ -119,12 +122,12 @@ const Index = () => {
                 </div>
                 <span className="font-bold">Spybee Support</span>
               </div>
-              <p className="text-sm mt-2">© {new Date().getFullYear()} Spybee. All rights reserved.</p>
+              <p className="text-sm mt-2">{t('index.footer.rights')}</p>
             </div>
             <div className="flex space-x-6">
-              <Link to="/" className="hover:text-spybee-yellow">Home</Link>
-              <Link to="/create-ticket" className="hover:text-spybee-yellow">Create Ticket</Link>
-              <Link to="/ticket-status" className="hover:text-spybee-yellow">Track Ticket</Link>
+              <Link to="/" className="hover:text-spybee-yellow">{t('nav.home')}</Link>
+              <Link to="/create-ticket" className="hover:text-spybee-yellow">{t('nav.createTicket')}</Link>
+              <Link to="/ticket-status" className="hover:text-spybee-yellow">{t('nav.checkStatus')}</Link>
             </div>
           </div>
         </div>
