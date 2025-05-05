@@ -10,7 +10,7 @@ export const handleTicketStatusChange = async (
   tickets: Ticket[],
   setTickets: (tickets: Ticket[]) => void,
   fetchTickets?: () => Promise<void>
-) => {
+): Promise<boolean> => {
   console.log(`handleTicketStatusChange: Changing ticket ${ticketId} status to ${newStatus}`);
   
   // Show loading toast to provide feedback during status change
@@ -25,14 +25,20 @@ export const handleTicketStatusChange = async (
       fetchTickets // Pass the fetchTickets function as a callback to refresh data
     );
     
+    toast.dismiss(toastId);
+    
     if (result.success) {
-      toast.dismiss(toastId);
-      toast.success(`Ticket ${ticketId} status updated to ${newStatus}`);
+      toast.success(`Ticket status updated to ${newStatus}`);
+      return true;
     } else {
-      toast.dismiss(toastId);
       toast.error("Failed to update ticket status", {
         description: result.error || "Please try again later"
       });
+      // Refresh tickets to ensure UI is in sync with database
+      if (fetchTickets) {
+        await fetchTickets();
+      }
+      return false;
     }
   } catch (error: any) {
     toast.dismiss(toastId);
@@ -41,25 +47,26 @@ export const handleTicketStatusChange = async (
     });
     // Refresh tickets to ensure UI is in sync with database
     if (fetchTickets) {
-      fetchTickets();
+      await fetchTickets();
     }
+    return false;
   }
 };
 
 // Helper function to handle drag and drop of tickets
-export const handleDragEnd = (
+export const handleDragEnd = async (
   result: any, 
   tickets: Ticket[], 
   mapColumnToStatus: (columnId: string) => TicketStatus | undefined,
-  handleStatusChange: (id: string, status: TicketStatus) => void
-) => {
+  handleStatusChange: (id: string, status: TicketStatus) => Promise<boolean>
+): Promise<boolean> => {
   const { source, destination, draggableId } = result;
   
   // If dropped outside a droppable area or dropped in the same place
   if (!destination || 
       (source.droppableId === destination.droppableId && 
       source.index === destination.index)) {
-    return;
+    return false;
   }
   
   // Get the ticket being dragged
@@ -71,6 +78,8 @@ export const handleDragEnd = (
   if (newStatus) {
     console.log(`Drag-and-drop: Changing ticket ${ticketId} status to ${newStatus}`);
     // Update the ticket status
-    handleStatusChange(ticketId, newStatus);
+    return await handleStatusChange(ticketId, newStatus);
   }
+  
+  return false;
 };

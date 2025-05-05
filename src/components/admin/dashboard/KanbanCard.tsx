@@ -1,5 +1,5 @@
 
-import { Ticket } from "@/types/ticket";
+import { Ticket, TicketStatus } from "@/types/ticket";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -10,16 +10,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Draggable } from "react-beautiful-dnd";
-import { TicketStatus } from "@/types/ticket";
+import { useState } from "react";
 
 interface KanbanCardProps {
   ticket: Ticket;
   index: number;
-  handleStatusChange: (id: string, status: TicketStatus) => void;
+  handleStatusChange: (id: string, status: TicketStatus) => Promise<boolean>;
   navigate: (path: string) => void;
 }
 
 const KanbanCard = ({ ticket, index, handleStatusChange, navigate }: KanbanCardProps) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const onStatusChange = async (value: string) => {
+    setIsUpdating(true);
+    await handleStatusChange(ticket.id, value as TicketStatus);
+    setIsUpdating(false);
+  };
+
   return (
     <Draggable key={ticket.id} draggableId={ticket.id} index={index}>
       {(provided, snapshot) => (
@@ -32,7 +40,7 @@ const KanbanCard = ({ ticket, index, handleStatusChange, navigate }: KanbanCardP
           <Card className="shadow-sm hover:shadow transition-all">
             <CardHeader className="p-3 pb-2">
               <div className="flex justify-between">
-                <span className="text-xs font-medium text-gray-500">#{ticket.id}</span>
+                <span className="text-xs font-medium text-gray-500">#{ticket.id.substring(0, 8)}</span>
                 <span
                   className={`inline-block px-2 py-1 text-xs rounded-full ${
                     ticket.category === "Bug"
@@ -60,9 +68,10 @@ const KanbanCard = ({ ticket, index, handleStatusChange, navigate }: KanbanCardP
               <div className="flex justify-between items-center mt-2">
                 <Select
                   value={ticket.status}
-                  onValueChange={(value) => handleStatusChange(ticket.id, value as TicketStatus)}
+                  onValueChange={onStatusChange}
+                  disabled={isUpdating}
                 >
-                  <SelectTrigger className="h-7 text-xs w-32">
+                  <SelectTrigger className={`h-7 text-xs w-32 ${isUpdating ? 'opacity-50' : ''}`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

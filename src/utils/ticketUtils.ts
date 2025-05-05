@@ -66,7 +66,7 @@ export const getColumnIdFromStatus = (status: TicketStatus): string => {
  * @param currentTickets The current array of tickets
  * @param setTickets Function to update the tickets state
  * @param refreshCallback Optional callback to refresh data after update
- * @returns Promise that resolves when the update is complete
+ * @returns Promise that resolves to a success boolean and optional data/error
  */
 export const updateTicketStatus = async (
   ticketId: string, 
@@ -74,11 +74,11 @@ export const updateTicketStatus = async (
   currentTickets: any[],
   setTickets: (tickets: any[]) => void,
   refreshCallback?: () => Promise<void>
-) => {
+): Promise<{success: boolean, data?: any, error?: any}> => {
   try {
     console.log(`Starting status update operation for ticket ${ticketId} to ${newStatus}...`);
     
-    // First, send the update to the database before updating UI
+    // Prepare the timestamp for the update
     const timestamp = new Date().toISOString();
     
     console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
@@ -90,18 +90,23 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
-    // Update the database first
+    // Make sure to await the database update
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
-      .eq('id', ticketId);
+      .eq('id', ticketId)
+      .select();  // Add select() to return the updated row
     
     if (error) {
       console.error('Database update error:', error);
       throw error;
     }
     
-    console.log('Database update succeeded. Updating UI...');
+    console.log('Database update succeeded:', data);
+    
+    if (!data || data.length === 0) {
+      console.warn('Update succeeded but no data returned from Supabase');
+    }
     
     // Update the UI after successful database update
     const updatedTickets = currentTickets.map((ticket) =>
