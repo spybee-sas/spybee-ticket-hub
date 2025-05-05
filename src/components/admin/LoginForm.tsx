@@ -19,7 +19,7 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState<boolean>(false); // Fix: Explicitly typed as boolean
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

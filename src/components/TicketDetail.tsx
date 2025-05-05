@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import TicketHeader from "./ticket/TicketHeader";
 import TicketAttachments from "./ticket/TicketAttachments";
 import TicketComments from "./ticket/TicketComments";
+import { validateUserType } from "@/utils/ticketUtils";
 
 interface TicketDetailProps {
   ticket: Ticket;
@@ -37,7 +38,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         // Transform the data to match our TicketComment type
         const formattedComments: TicketComment[] = data.map(comment => {
           // Validate user_type to ensure it's 'admin' or 'user'
-          const validatedUserType: UserType = comment.user_type === 'admin' ? 'admin' : 'user';
+          const validatedUserType: UserType = validateUserType(comment.user_type);
           
           return {
             id: comment.id,
@@ -97,9 +98,9 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       <TicketComments 
         ticketId={ticket.id}
         comments={comments}
-        userName={ticket.name}
-        isAdmin={isAdmin}
         onCommentAdded={handleCommentAdded}
+        isAdmin={isAdmin}
+        userDisplayName={ticket.name}
       />
     </div>
   );
