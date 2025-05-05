@@ -194,7 +194,8 @@ const Dashboard = () => {
     const newStatus = mapColumnToStatus(destination.droppableId);
     
     if (newStatus) {
-      // Update the ticket status
+      // Update the ticket status using the same function as handleStatusChange
+      // This ensures consistency between drag-and-drop and dropdown status changes
       handleStatusChange(ticketId, newStatus);
     }
   };

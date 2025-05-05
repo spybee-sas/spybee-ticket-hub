@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import TicketHeader from "./ticket/TicketHeader";
 import TicketAttachments from "./ticket/TicketAttachments";
 import TicketComments from "./ticket/TicketComments";
-import { validateUserType } from "@/utils/ticketUtils";
+import { validateUserType, updateTicketStatus } from "@/utils/ticketUtils";
 
 interface TicketDetailProps {
   ticket: Ticket;
@@ -16,6 +16,7 @@ interface TicketDetailProps {
 const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   const [status, setStatus] = useState<TicketStatus>(ticket.status);
   const [comments, setComments] = useState<TicketComment[]>([]);
+  const [ticketData, setTicketData] = useState<Ticket>(ticket);
 
   // Fetch comments from Supabase
   useEffect(() => {
@@ -61,21 +62,22 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   };
 
   const handleStatusChange = async (newStatus: TicketStatus) => {
-    try {
-      // Update ticket status in Supabase
-      const { error } = await supabase
-        .from('tickets')
-        .update({ status: newStatus })
-        .eq('id', ticket.id);
-      
-      if (error) {
-        throw new Error(`Error updating status: ${error.message}`);
+    // Use the centralized function for updating ticket status
+    const result = await updateTicketStatus(
+      ticket.id, 
+      newStatus, 
+      [ticketData], 
+      (updatedTickets) => {
+        if (updatedTickets.length > 0) {
+          setTicketData(updatedTickets[0]);
+          setStatus(newStatus);
+        }
       }
-      
-      setStatus(newStatus);
+    );
+    
+    if (result.success) {
       toast.success(`Ticket status updated to ${newStatus}`);
-    } catch (error: any) {
-      console.error("Error updating status:", error);
+    } else {
       toast.error("Failed to update ticket status");
     }
   };
@@ -87,20 +89,20 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   return (
     <div className="space-y-8">
       <TicketHeader 
-        ticket={ticket} 
+        ticket={ticketData} 
         status={status} 
         isAdmin={isAdmin} 
         onStatusChange={handleStatusChange}
       />
       
-      <TicketAttachments attachments={ticket.attachments || []} />
+      <TicketAttachments attachments={ticketData.attachments || []} />
       
       <TicketComments 
-        ticketId={ticket.id}
+        ticketId={ticketData.id}
         comments={comments}
         onCommentAdded={handleCommentAdded}
         isAdmin={isAdmin}
-        userDisplayName={ticket.name}
+        userDisplayName={ticketData.name}
       />
     </div>
   );
