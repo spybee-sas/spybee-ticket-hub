@@ -136,16 +136,17 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         userId = '00000000-0000-0000-0000-000000000000';
       }
       
-      // The user_type column must be exactly 'admin' or 'user' due to check constraint
+      // Explicit string value assignment to ensure the constraint is satisfied
+      // The constraint likely requires 'admin' or 'user' exactly
       const userType = isAdmin ? 'admin' : 'user';
       
       console.log("Comment being created with user_type:", userType);
       
-      // Create the comment data
+      // Create the comment data with validated user_type
       const newCommentData = {
         ticket_id: ticket.id,
         user_id: userId,
-        user_type: userType,  // This must match the check constraint values: 'admin' or 'user'
+        user_type: userType, // Explicit string value - must match check constraint values
         content: comment,
         is_internal: isAdmin && isInternal
       };
