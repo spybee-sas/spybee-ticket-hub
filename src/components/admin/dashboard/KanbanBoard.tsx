@@ -51,31 +51,43 @@ const KanbanBoard = ({
       setProcessingDrag(true);
       console.log(`Drag-and-drop: Changing ticket ${draggableId} status to ${newStatus}`);
       
+      // Preserve the original ticket for potential rollback
+      const originalTicket = tickets.find(t => t.id === draggableId);
+      const originalStatus = originalTicket?.status;
+      
       // First, update local state optimistically for a responsive UI
       const updatedTickets = localTickets.map(ticket => 
         ticket.id === draggableId ? { ...ticket, status: newStatus } : ticket
       );
       setLocalTickets(updatedTickets);
       
-      // Then update the backend
-      const success = await handleStatusChange(draggableId, newStatus);
-      
-      // Only revert the local state if the backend update explicitly failed
-      if (!success) {
-        // Find the original status from the parent tickets array
-        const originalTicket = tickets.find(t => t.id === draggableId);
-        if (originalTicket) {
+      try {
+        // Then update the backend
+        const success = await handleStatusChange(draggableId, newStatus);
+        
+        // Only revert the local state if the backend update explicitly failed
+        if (!success && originalStatus) {
+          console.log(`Status update failed, reverting to original status: ${originalStatus}`);
           const revertedTickets = localTickets.map(ticket => 
-            ticket.id === draggableId ? { ...ticket, status: originalTicket.status } : ticket
+            ticket.id === draggableId ? { ...ticket, status: originalStatus } : ticket
           );
           setLocalTickets(revertedTickets);
         }
+      } catch (error) {
+        console.error("Error during status change:", error);
+        // Revert on error
+        if (originalStatus) {
+          const revertedTickets = localTickets.map(ticket => 
+            ticket.id === draggableId ? { ...ticket, status: originalStatus } : ticket
+          );
+          setLocalTickets(revertedTickets);
+        }
+      } finally {
+        // Clear the processing state after a short delay to prevent immediate overwrite from parent props
+        setTimeout(() => {
+          setProcessingDrag(false);
+        }, 1200); // Increased delay for better reliability
       }
-      
-      // Clear the processing state after a short delay to prevent immediate overwrite from parent props
-      setTimeout(() => {
-        setProcessingDrag(false);
-      }, 1000);
     }
   };
 

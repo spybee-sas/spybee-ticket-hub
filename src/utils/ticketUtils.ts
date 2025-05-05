@@ -83,6 +83,12 @@ export const updateTicketStatus = async (
     
     console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
     
+    // Check if the user has an active session (needed for RLS policies)
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      console.error('No active session found. This might cause permission issues.');
+    }
+    
     // Explicitly prepare the update data
     const updateData = { 
       status: newStatus,
@@ -90,7 +96,7 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
-    // Update the database and wait for the result
+    // Update the database with more detailed error logging
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
@@ -98,6 +104,15 @@ export const updateTicketStatus = async (
     
     if (error) {
       console.error('Database update error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      
+      // Check for specific error types
+      if (error.code === '42501') {
+        console.error('Permission denied: The current user does not have permission to update this ticket');
+      } else if (error.code === 'PGRST116') {
+        console.error('Row-level security policy violation: The user does not have permission for this operation');
+      }
+      
       throw error;
     }
     
@@ -105,7 +120,7 @@ export const updateTicketStatus = async (
     // as long as there's no error
     console.log('Database update succeeded without errors');
     
-    // Update the UI optimistically after successful database update
+    // Update UI optimistically after successful database update
     const updatedTickets = currentTickets.map((ticket) =>
       ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: timestamp } : ticket
     );
@@ -119,7 +134,7 @@ export const updateTicketStatus = async (
       // Wait a short delay before refreshing to ensure the database update has propagated
       setTimeout(async () => {
         await refreshCallback();
-      }, 500);
+      }, 800); // Increased delay for better reliability
     }
     
     return { success: true };
