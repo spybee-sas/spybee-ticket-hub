@@ -12,9 +12,6 @@ type CheckAdminPasswordParams = {
   admin_password: string;
 }
 
-// Define the return type for the RPC function
-type CheckAdminPasswordResult = boolean;
-
 const LoginForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -44,9 +41,9 @@ const LoginForm = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Using the proper type parameters for RPC - generic signature is rpc<ReturnType, ParamsType>
+      // Fix the type parameters - use rpc<ReturnType>(functionName, params)
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
         });

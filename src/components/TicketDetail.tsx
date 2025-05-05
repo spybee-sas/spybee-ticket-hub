@@ -90,9 +90,6 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
     setIsLoading(true);
     
     try {
-      // Get the user type (admin or regular user)
-      const userType = isAdmin ? 'admin' : 'user';
-      
       // Get the user ID - for admin, get from localStorage
       let userId = null;
       if (isAdmin) {
@@ -139,11 +136,12 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         userId = '00000000-0000-0000-0000-000000000000';
       }
       
-      // Create the comment data with strictly controlled values
+      // Create the comment data - Very important: user_type must be exactly 'admin' or 'user'
+      // Looking at the database constraint error, these are the only values allowed
       const newCommentData = {
         ticket_id: ticket.id,
         user_id: userId,
-        user_type: isAdmin ? 'admin' : 'user', // Ensure only allowed values
+        user_type: isAdmin ? 'admin' : 'user', // Must be exactly 'admin' or 'user'
         content: comment,
         is_internal: isAdmin && isInternal
       };
