@@ -60,69 +60,61 @@ export const getColumnIdFromStatus = (status: TicketStatus): string => {
 };
 
 /**
- * Updates a ticket's status in the database and handles optimistic UI updates
+ * Updates a ticket's status in the database
  * @param ticketId The ID of the ticket to update
  * @param newStatus The new status to set
  * @param currentTickets The current array of tickets
  * @param setTickets Function to update the tickets state
+ * @param refreshCallback Optional callback to refresh data after update
  * @returns Promise that resolves when the update is complete
  */
 export const updateTicketStatus = async (
   ticketId: string, 
   newStatus: TicketStatus,
   currentTickets: any[],
-  setTickets: (tickets: any[]) => void
+  setTickets: (tickets: any[]) => void,
+  refreshCallback?: () => Promise<void>
 ) => {
   try {
     console.log(`Starting status update operation for ticket ${ticketId} to ${newStatus}...`);
     
-    // First, update the UI optimistically
-    const updatedTickets = currentTickets.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
-    );
-    
-    // Update UI immediately for better UX
-    setTickets(updatedTickets);
-    
-    // Then, perform the database update operation
+    // First, send the update to the database before updating UI
     const timestamp = new Date().toISOString();
     
     console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
     
-    // Explicitly log what we're sending to Supabase
+    // Explicitly prepare the update data
     const updateData = { 
       status: newStatus,
       updated_at: timestamp
     };
     console.log('Update data:', updateData);
     
+    // Update the database first
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
-      .eq('id', ticketId)
-      .select('*');
+      .eq('id', ticketId);
     
     if (error) {
-      // If there's an error, revert the optimistic update
       console.error('Database update error:', error);
-      setTickets(currentTickets); // Revert to previous state
       throw error;
     }
     
-    console.log('Supabase update response:', data);
+    console.log('Database update succeeded. Updating UI...');
     
-    // Update local state with freshly fetched data if needed
-    if (data && data.length > 0) {
-      console.log('Database update successful, updating UI with confirmed data');
-      
-      // This is just an additional confirmation that DB and UI are in sync
-      const refreshedTickets = currentTickets.map((ticket) =>
-        ticket.id === ticketId ? { ...ticket, status: data[0].status, updated_at: data[0].updated_at } : ticket
-      );
-      
-      setTickets(refreshedTickets);
-    } else {
-      console.warn('No data returned from update operation - this is unusual');
+    // Update the UI after successful database update
+    const updatedTickets = currentTickets.map((ticket) =>
+      ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: timestamp } : ticket
+    );
+    
+    // Update UI
+    setTickets(updatedTickets);
+    
+    // If a refresh callback was provided, call it to ensure fresh data
+    if (refreshCallback) {
+      console.log('Refreshing data after successful update...');
+      await refreshCallback();
     }
     
     return { success: true, data };

@@ -110,31 +110,42 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   const handleStatusChange = async (newStatus: TicketStatus) => {
     console.log(`TicketDetail: Changing status from ${status} to ${newStatus} for ticket ${ticket.id}`);
     
+    // Show loading toast
+    const toastId = toast.loading(`Updating status to ${newStatus}...`);
+    
     // Create a temporary array with just this ticket for the updateTicketStatus function
     const singleTicketArray = [ticketData];
     
-    const result = await updateTicketStatus(
-      ticket.id, 
-      newStatus, 
-      singleTicketArray, 
-      (updatedTickets) => {
-        if (updatedTickets.length > 0) {
-          setTicketData(updatedTickets[0]);
-          setStatus(newStatus);
-        }
+    try {
+      const result = await updateTicketStatus(
+        ticket.id, 
+        newStatus, 
+        singleTicketArray, 
+        (updatedTickets) => {
+          if (updatedTickets.length > 0) {
+            setTicketData(updatedTickets[0]);
+            setStatus(newStatus);
+          }
+        },
+        fetchTicketData // Pass the fetch function as a callback to ensure data is refreshed
+      );
+      
+      toast.dismiss(toastId);
+      
+      if (result.success) {
+        toast.success(`Ticket status updated to ${newStatus}`);
+      } else {
+        toast.error("Failed to update ticket status", {
+          description: result.error || "Please try again"
+        });
+        fetchTicketData(); // Refresh data if update failed
       }
-    );
-    
-    if (result.success) {
-      toast.success(`Ticket status updated to ${newStatus}`);
-      // Force a refresh to ensure we have the latest data
-      setTimeout(() => {
-        fetchTicketData();
-      }, 500);
-    } else {
-      toast.error("Failed to update ticket status");
-      // Force a refresh of the ticket data if the update failed
-      fetchTicketData();
+    } catch (error: any) {
+      toast.dismiss(toastId);
+      toast.error("Error updating ticket status", {
+        description: error.message || "Please try again"
+      });
+      fetchTicketData(); // Refresh data if there was an error
     }
   };
 

@@ -95,6 +95,7 @@ const Dashboard = () => {
         title: ticket.title
       }));
 
+      console.log(`Fetched ${formattedTickets.length} tickets from database`);
       setTickets(formattedTickets);
       setFilteredTickets(formattedTickets);
     } catch (error: any) {
@@ -168,17 +169,34 @@ const Dashboard = () => {
   const handleStatusChange = async (ticketId: string, newStatus: TicketStatus) => {
     console.log(`Dashboard: Changing ticket ${ticketId} status to ${newStatus}`);
     
-    const result = await updateTicketStatus(ticketId, newStatus, tickets, setTickets);
+    // Show loading toast to provide feedback during status change
+    const toastId = toast.loading(`Updating ticket status to ${newStatus}...`);
     
-    if (result.success) {
-      toast.success(`Ticket ${ticketId} status updated to ${newStatus}`);
+    try {
+      const result = await updateTicketStatus(
+        ticketId, 
+        newStatus, 
+        tickets, 
+        setTickets,
+        fetchTickets // Pass the fetchTickets function as a callback to refresh data
+      );
       
-      // Refresh the tickets list to ensure we have the latest data
-      fetchTickets();
-    } else {
-      toast.error("Failed to update ticket status", {
-        description: result.error || "Please try again later"
+      if (result.success) {
+        toast.dismiss(toastId);
+        toast.success(`Ticket ${ticketId} status updated to ${newStatus}`);
+      } else {
+        toast.dismiss(toastId);
+        toast.error("Failed to update ticket status", {
+          description: result.error || "Please try again later"
+        });
+      }
+    } catch (error: any) {
+      toast.dismiss(toastId);
+      toast.error("Error updating ticket status", {
+        description: error.message || "Please try again later"
       });
+      // Refresh tickets to ensure UI is in sync with database
+      fetchTickets();
     }
   };
 
@@ -201,7 +219,6 @@ const Dashboard = () => {
     if (newStatus) {
       console.log(`Drag-and-drop: Changing ticket ${ticketId} status to ${newStatus}`);
       // Update the ticket status using the handleStatusChange function
-      // This ensures consistency between drag-and-drop and dropdown status changes
       handleStatusChange(ticketId, newStatus);
     }
   };
@@ -617,7 +634,7 @@ const KanbanColumn = ({
   return (
     <Card className="h-full">
       <CardHeader className={`bg-${columnColor}-50 border-b border-${columnColor}-100`}>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between">
           <CardTitle className="text-lg">{title}</CardTitle>
           <span className={`bg-${columnColor}-500 text-white text-sm font-semibold px-2.5 py-0.5 rounded-full`}>
             {tickets.length}
