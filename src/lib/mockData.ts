@@ -1,5 +1,4 @@
-
-import { Ticket, TicketAttachment, TicketComment } from "../types/ticket";
+import { Ticket, TicketAttachment, TicketComment, UserType } from "../types/ticket";
 
 // Mock Tickets
 export const mockTickets: Ticket[] = [

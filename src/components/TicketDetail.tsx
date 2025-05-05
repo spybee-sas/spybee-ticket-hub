@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Ticket, TicketComment, TicketStatus, UserType } from "@/types/ticket";
 import { formatDistanceToNow, format } from "date-fns";
@@ -58,7 +57,8 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
             content: comment.content,
             created_at: comment.created_at,
             is_internal: comment.is_internal,
-            user_type: validatedUserType
+            user_type: validatedUserType,
+            user_id: comment.user_id
           };
         });
         
@@ -181,7 +181,8 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
           content: data[0].content,
           created_at: data[0].created_at,
           is_internal: data[0].is_internal,
-          user_type: validatedUserType
+          user_type: validatedUserType,
+          user_id: data[0].user_id
         };
         
         setComments(prev => [newComment, ...prev]);
