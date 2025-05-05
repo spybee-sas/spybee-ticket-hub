@@ -104,38 +104,53 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       } else {
         // For regular users, use the ticket's user ID
         const { data, error } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', ticket.email)
+          .from('tickets')
+          .select('user_id')
+          .eq('id', ticket.id)
           .single();
         
-        if (error || !data) {
-          console.error("Error fetching user ID:", error);
-        } else {
-          userId = data.id;
+        if (error) {
+          console.error("Error fetching ticket user ID:", error);
+        } else if (data) {
+          userId = data.user_id;
         }
       }
       
       if (!userId) {
-        // Fallback to a placeholder ID if necessary
-        const { data: fallbackUserData } = await supabase
+        console.log("Fallback: Looking up user ID by email");
+        // Try to get user ID by email as fallback
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select('id')
           .eq('email', ticket.email)
           .maybeSingle();
           
-        userId = fallbackUserData?.id || '00000000-0000-0000-0000-000000000000';
+        if (userError) {
+          console.error("Error in fallback user lookup:", userError);
+        } else if (userData) {
+          userId = userData.id;
+          console.log("Found user ID via email:", userId);
+        }
       }
       
-      // Create the new comment in Supabase - ensure user_type is either 'admin' or 'user'
+      // If still no userId, use a placeholder (shouldn't normally happen)
+      if (!userId) {
+        console.warn("Could not determine user ID for comment - using placeholder");
+        userId = '00000000-0000-0000-0000-000000000000';
+      }
+      
+      // Create the comment data with strictly controlled values
       const newCommentData = {
         ticket_id: ticket.id,
         user_id: userId,
-        user_type: userType === 'admin' ? 'admin' : 'user', // Ensure only allowed values are used
+        user_type: isAdmin ? 'admin' : 'user', // Ensure only allowed values
         content: comment,
         is_internal: isAdmin && isInternal
       };
       
+      console.log("Submitting comment with data:", newCommentData);
+      
+      // Insert the comment
       const { data, error } = await supabase
         .from('ticket_comments')
         .insert(newCommentData)
@@ -151,7 +166,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         const newComment: TicketComment = {
           id: data[0].id,
           ticket_id: data[0].ticket_id,
-          user: userType === 'admin' ? 'Admin' : ticket.name,
+          user: isAdmin ? 'Admin' : ticket.name,
           content: data[0].content,
           created_at: data[0].created_at,
           is_internal: data[0].is_internal
