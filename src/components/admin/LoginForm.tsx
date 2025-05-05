@@ -7,14 +7,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-// Define the correct types for the RPC function
-type CheckAdminPasswordParams = {
-  admin_email: string;
-  admin_password: string;
-}
-
-// Define the return type explicitly
-type CheckAdminPasswordResult = {
+// Define the correct interface for the RPC function result
+interface CheckAdminPasswordResult {
   result: boolean;
 }
 
@@ -47,14 +41,22 @@ const LoginForm = () => {
         throw new Error('Authentication failed');
       }
       
-      // Call the RPC function with the correct type parameters
-      const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<CheckAdminPasswordResult, CheckAdminPasswordParams>('check_admin_password', {
+      // Call the RPC function to check password
+      const { data, error: passwordError } = await supabase
+        .rpc('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
       
-      if (passwordError || !passwordCheck || !passwordCheck.result) {
+      // Properly handle the RPC result
+      if (passwordError || !data) {
+        throw new Error('Invalid credentials');
+      }
+      
+      // Correctly cast and check the result
+      const passwordCheck = data as CheckAdminPasswordResult;
+      
+      if (!passwordCheck.result) {
         throw new Error('Invalid credentials');
       }
       
