@@ -6,6 +6,12 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+// Define the type for the RPC function parameters
+type CheckAdminPasswordParams = {
+  admin_email: string;
+  admin_password: string;
+}
+
 const LoginForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -36,10 +42,10 @@ const LoginForm = () => {
       
       // Check password using a separate query with pgcrypto
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc('check_admin_password', {
+        .rpc<boolean>('check_admin_password', {
           admin_email: email,
           admin_password: password
-        });
+        } as CheckAdminPasswordParams);
       
       if (passwordError || !passwordCheck) {
         throw new Error('Invalid credentials');
