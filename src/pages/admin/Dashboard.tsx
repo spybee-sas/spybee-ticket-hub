@@ -119,17 +119,23 @@ const Dashboard = () => {
     
     // Apply project filter
     if (projectFilter) {
-      result = result.filter((t) => t.project === projectFilter);
+      if (projectFilter !== "all_projects") {
+        result = result.filter((t) => t.project === projectFilter);
+      }
     }
     
     // Apply user filter
     if (userFilter) {
-      result = result.filter((t) => t.name === userFilter);
+      if (userFilter !== "all_users") {
+        result = result.filter((t) => t.name === userFilter);
+      }
     }
     
     // Apply email domain filter
     if (emailDomainFilter) {
-      result = result.filter((t) => t.email.endsWith(emailDomainFilter));
+      if (emailDomainFilter !== "all_domains") {
+        result = result.filter((t) => t.email.endsWith(emailDomainFilter));
+      }
     }
     
     // Apply search filter (search in ticket ID, name, email, and description)
@@ -302,7 +308,7 @@ const Dashboard = () => {
                       <SelectValue placeholder="Filter by project" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Projects</SelectItem>
+                      <SelectItem value="all_projects">All Projects</SelectItem>
                       {projects.map((project) => (
                         <SelectItem key={project} value={project}>
                           {project}
@@ -324,7 +330,7 @@ const Dashboard = () => {
                       <SelectValue placeholder="Filter by user" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Users</SelectItem>
+                      <SelectItem value="all_users">All Users</SelectItem>
                       {users.map((user) => (
                         <SelectItem key={user} value={user}>
                           {user}
@@ -346,7 +352,7 @@ const Dashboard = () => {
                       <SelectValue placeholder="Filter by email domain" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Domains</SelectItem>
+                      <SelectItem value="all_domains">All Domains</SelectItem>
                       {emailDomains.map((domain) => (
                         <SelectItem key={domain} value={domain}>
                           {domain}

@@ -52,10 +52,6 @@ const LoginForm = () => {
         throw new Error('Invalid credentials');
       }
       
-      if (!data.result) {
-        throw new Error('Invalid credentials');
-      }
-      
       // Store admin session in localStorage
       localStorage.setItem("spybee_admin", JSON.stringify({ 
         email: admin.email, 
