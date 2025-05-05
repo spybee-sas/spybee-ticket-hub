@@ -1,5 +1,5 @@
-
 import { UserType, TicketStatus } from "@/types/ticket";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Validates user type to ensure it's either 'admin' or 'user'
@@ -56,4 +56,51 @@ export const getColumnIdFromStatus = (status: TicketStatus): string => {
   };
   
   return columnMap[status];
+};
+
+/**
+ * Updates a ticket's status in the database and handles optimistic UI updates
+ * @param ticketId The ID of the ticket to update
+ * @param newStatus The new status to set
+ * @param currentTickets The current array of tickets
+ * @param setTickets Function to update the tickets state
+ * @returns Promise that resolves when the update is complete
+ */
+export const updateTicketStatus = async (
+  ticketId: string, 
+  newStatus: TicketStatus,
+  currentTickets: any[],
+  setTickets: (tickets: any[]) => void
+) => {
+  // First update local state for optimistic UI
+  const updatedTickets = currentTickets.map((ticket) =>
+    ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
+  );
+  
+  setTickets(updatedTickets);
+  
+  try {
+    // Update status in Supabase
+    const { error } = await supabase
+      .from('tickets')
+      .update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', ticketId);
+    
+    if (error) throw error;
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to update ticket status:", error);
+    
+    // Revert local state on error
+    setTickets(currentTickets);
+    
+    return { 
+      success: false, 
+      error: error.message || "Failed to update ticket status" 
+    };
+  }
 };

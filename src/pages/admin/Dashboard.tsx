@@ -32,7 +32,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Filter, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
-import { mapColumnToStatus, getStatusColorClass } from "@/utils/ticketUtils";
+import { 
+  mapColumnToStatus, 
+  getStatusColorClass, 
+  getColumnIdFromStatus,
+  updateTicketStatus 
+} from "@/utils/ticketUtils";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -161,26 +166,13 @@ const Dashboard = () => {
   };
 
   const handleStatusChange = async (ticketId: string, newStatus: TicketStatus) => {
-    try {
-      // Update status in Supabase
-      const { error } = await supabase
-        .from('tickets')
-        .update({ status: newStatus })
-        .eq('id', ticketId);
-      
-      if (error) throw error;
-      
-      // Update local state
-      const updatedTickets = tickets.map((ticket) =>
-        ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
-      );
-      
-      setTickets(updatedTickets);
+    const result = await updateTicketStatus(ticketId, newStatus, tickets, setTickets);
+    
+    if (result.success) {
       toast.success(`Ticket ${ticketId} status updated to ${newStatus}`);
-    } catch (error: any) {
-      console.error("Failed to update ticket status:", error);
+    } else {
       toast.error("Failed to update ticket status", {
-        description: error.message || "Please try again later"
+        description: result.error || "Please try again later"
       });
     }
   };
