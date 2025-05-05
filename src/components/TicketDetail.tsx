@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Ticket, TicketComment, TicketStatus } from "@/types/ticket";
+import { Ticket, TicketComment, TicketStatus, UserType } from "@/types/ticket";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,15 +47,20 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       
       if (data) {
         // Transform the data to match our TicketComment type
-        const formattedComments: TicketComment[] = data.map(comment => ({
-          id: comment.id,
-          ticket_id: comment.ticket_id,
-          user: comment.user_type === 'admin' ? 'Admin' : ticket.name,
-          content: comment.content,
-          created_at: comment.created_at,
-          is_internal: comment.is_internal,
-          user_type: comment.user_type // Make sure to include user_type
-        }));
+        const formattedComments: TicketComment[] = data.map(comment => {
+          // Validate user_type to ensure it's 'admin' or 'user'
+          const validatedUserType: UserType = comment.user_type === 'admin' ? 'admin' : 'user';
+          
+          return {
+            id: comment.id,
+            ticket_id: comment.ticket_id,
+            user: validatedUserType === 'admin' ? 'Admin' : ticket.name,
+            content: comment.content,
+            created_at: comment.created_at,
+            is_internal: comment.is_internal,
+            user_type: validatedUserType
+          };
+        });
         
         setComments(formattedComments);
       }
@@ -137,8 +142,8 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         userId = '00000000-0000-0000-0000-000000000000';
       }
       
-      // Use EXACTLY 'admin' or 'user' strings for user_type to match database constraint
-      const userType = isAdmin ? 'admin' : 'user';
+      // Determine user_type based on isAdmin flag
+      const userType: UserType = isAdmin ? 'admin' : 'user';
       
       console.log("Comment being created with user_type:", userType);
       
@@ -146,7 +151,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       const newCommentData = {
         ticket_id: ticket.id,
         user_id: userId,
-        user_type: userType, // Must be exactly 'admin' or 'user'
+        user_type: userType,
         content: comment,
         is_internal: isAdmin && isInternal
       };
@@ -166,6 +171,9 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       
       if (data && data.length > 0) {
         // Add the new comment to the state
+        // Ensure user_type is properly validated as 'admin' or 'user'
+        const validatedUserType: UserType = data[0].user_type === 'admin' ? 'admin' : 'user';
+        
         const newComment: TicketComment = {
           id: data[0].id,
           ticket_id: data[0].ticket_id,
@@ -173,7 +181,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
           content: data[0].content,
           created_at: data[0].created_at,
           is_internal: data[0].is_internal,
-          user_type: data[0].user_type // Make sure to include user_type
+          user_type: validatedUserType
         };
         
         setComments(prev => [newComment, ...prev]);
@@ -365,6 +373,33 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       </Card>
     </div>
   );
+};
+
+// Helper functions
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Open":
+      return "bg-blue-100 text-blue-800";
+    case "In Progress":
+      return "bg-amber-100 text-amber-800";
+    case "Closed":
+      return "bg-green-100 text-green-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case "Bug":
+      return "bg-red-100 text-red-800";
+    case "Complaint":
+      return "bg-purple-100 text-purple-800";
+    case "Delivery Issue":
+      return "bg-orange-100 text-orange-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
 };
 
 export default TicketDetail;

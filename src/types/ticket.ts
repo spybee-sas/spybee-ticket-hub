@@ -3,6 +3,8 @@ export type TicketStatus = 'Open' | 'In Progress' | 'Closed';
 
 export type TicketCategory = 'Bug' | 'Complaint' | 'Delivery Issue' | 'Other';
 
+export type UserType = 'admin' | 'user';
+
 export interface Ticket {
   id: string;
   name: string;
@@ -32,6 +34,6 @@ export interface TicketComment {
   content: string;
   created_at: string;
   is_internal: boolean;
-  user_type: 'admin' | 'user';
+  user_type: UserType;
   user_id?: string;
 }
