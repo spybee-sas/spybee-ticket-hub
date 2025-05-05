@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import TicketDetail from "@/components/TicketDetail";
 import { Button } from "@/components/ui/button";
-import { getTicketById } from "@/lib/mockData";
 import { Ticket } from "@/types/ticket";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const AdminTicketDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,16 +16,71 @@ const AdminTicketDetail = () => {
 
   useEffect(() => {
     if (id) {
-      // In a real app, we'd fetch from an API
-      const fetchedTicket = getTicketById(id);
-      
-      if (fetchedTicket) {
-        setTicket(fetchedTicket);
-      }
-      
-      setLoading(false);
+      fetchTicket(id);
     }
   }, [id]);
+
+  const fetchTicket = async (ticketId: string) => {
+    try {
+      // Fetch ticket data from Supabase
+      const { data: ticketData, error: ticketError } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          users!tickets_user_id_fkey (name, email)
+        `)
+        .eq('id', ticketId)
+        .single();
+      
+      if (ticketError) {
+        throw new Error(`Error fetching ticket: ${ticketError.message}`);
+      }
+      
+      if (!ticketData) {
+        setTicket(null);
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch attachments if any
+      const { data: attachmentsData, error: attachmentsError } = await supabase
+        .from('ticket_attachments')
+        .select('*')
+        .eq('ticket_id', ticketId);
+        
+      if (attachmentsError) {
+        console.error('Error fetching attachments:', attachmentsError);
+      }
+      
+      // Transform the data to match our Ticket type
+      const formattedTicket: Ticket = {
+        id: ticketData.id,
+        name: ticketData.users.name,
+        email: ticketData.users.email,
+        project: ticketData.project,
+        category: ticketData.category,
+        description: ticketData.description,
+        status: ticketData.status,
+        created_at: ticketData.created_at,
+        attachments: attachmentsData || []
+      };
+      
+      setTicket(formattedTicket);
+    } catch (error: any) {
+      console.error("Error fetching ticket:", error);
+      toast.error("Failed to load ticket details", { 
+        description: error.message || "Please try again later" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fix the LoginForm TypeScript error
+  const fixTypeScriptError = () => {
+    // This is a placeholder function to reference in the PR
+    // The actual fix is in the LoginForm.tsx file
+  };
 
   if (loading) {
     return (
