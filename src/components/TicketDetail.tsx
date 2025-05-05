@@ -94,7 +94,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       const userType = isAdmin ? 'admin' : 'user';
       
       // Get the user ID - for admin, get from localStorage
-      let userId;
+      let userId = null;
       if (isAdmin) {
         const adminData = localStorage.getItem("spybee_admin");
         if (adminData) {
@@ -111,17 +111,27 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         
         if (error || !data) {
           console.error("Error fetching user ID:", error);
-          userId = null; // Fallback
         } else {
           userId = data.id;
         }
       }
       
-      // Create the new comment in Supabase
+      if (!userId) {
+        // Fallback to a placeholder ID if necessary
+        const { data: fallbackUserData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', ticket.email)
+          .maybeSingle();
+          
+        userId = fallbackUserData?.id || '00000000-0000-0000-0000-000000000000';
+      }
+      
+      // Create the new comment in Supabase - ensure user_type is either 'admin' or 'user'
       const newCommentData = {
         ticket_id: ticket.id,
-        user_id: userId || '00000000-0000-0000-0000-000000000000', // Fallback ID if not found
-        user_type: userType,
+        user_id: userId,
+        user_type: userType === 'admin' ? 'admin' : 'user', // Ensure only allowed values are used
         content: comment,
         is_internal: isAdmin && isInternal
       };
@@ -132,6 +142,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         .select();
       
       if (error) {
+        console.error("Error adding comment:", error);
         throw new Error(`Error adding comment: ${error.message}`);
       }
       
@@ -152,7 +163,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
       }
     } catch (error: any) {
       console.error("Error adding comment:", error);
-      toast.error("Failed to add comment");
+      toast.error(`Failed to add comment: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

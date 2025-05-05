@@ -44,9 +44,9 @@ const LoginForm = () => {
       }
       
       // Check password using a separate query with pgcrypto
-      // Providing both generic types: the return type and the params type
+      // Using a type annotation that correctly specifies both the return type and params type
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<CheckAdminPasswordResult, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc<CheckAdminPasswordResult>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
