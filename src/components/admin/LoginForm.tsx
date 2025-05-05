@@ -45,7 +45,7 @@ const LoginForm = () => {
       
       // Call the RPC function with the correct type parameters
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<CheckAdminPasswordResult>('check_admin_password', {
+        .rpc<CheckAdminPasswordResult, CheckAdminPasswordParams>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
