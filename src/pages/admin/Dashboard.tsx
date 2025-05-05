@@ -33,6 +33,7 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [view, setView] = useState<"table" | "kanban">("kanban");
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Stats calculations
   const openTickets = tickets.filter((t) => t.status === "Open").length;
@@ -91,6 +92,7 @@ const Dashboard = () => {
       setFilteredTickets(mockTickets);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -144,8 +146,22 @@ const Dashboard = () => {
   }, [statusFilter, projectFilter, userFilter, emailDomainFilter, searchTerm, tickets]);
 
   // Handle ticket status change
-  const handleStatusChange = async (ticketId: string, newStatus: TicketStatus) => {
-    await handleTicketStatusChange(ticketId, newStatus, tickets, setTickets, fetchTickets);
+  const handleStatusChange = async (ticketId: string, newStatus: TicketStatus): Promise<boolean> => {
+    setIsRefreshing(true);
+    try {
+      const result = await handleTicketStatusChange(
+        ticketId, 
+        newStatus, 
+        tickets, 
+        setTickets, 
+        fetchTickets
+      );
+      return result;
+    } catch (error) {
+      console.error("Error in handleStatusChange:", error);
+      setIsRefreshing(false);
+      return false;
+    }
   };
 
   // Handle drag and drop
@@ -200,13 +216,12 @@ const Dashboard = () => {
                 navigate={navigate} 
               />
             ) : (
-              <DragDropContext onDragEnd={onDragEnd}>
-                <KanbanBoard 
-                  tickets={filteredTickets} 
-                  handleStatusChange={handleStatusChange} 
-                  navigate={navigate}
-                />
-              </DragDropContext>
+              <KanbanBoard 
+                tickets={filteredTickets} 
+                handleStatusChange={handleStatusChange} 
+                navigate={navigate}
+                isRefreshing={isRefreshing}
+              />
             )
           )}
         </main>
