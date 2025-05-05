@@ -136,12 +136,16 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         userId = '00000000-0000-0000-0000-000000000000';
       }
       
-      // Create the comment data - Very important: user_type must be exactly 'admin' or 'user'
-      // Looking at the database constraint error, these are the only values allowed
+      // The user_type column must be exactly 'admin' or 'user' due to check constraint
+      const userType = isAdmin ? 'admin' : 'user';
+      
+      console.log("Comment being created with user_type:", userType);
+      
+      // Create the comment data
       const newCommentData = {
         ticket_id: ticket.id,
         user_id: userId,
-        user_type: isAdmin ? 'admin' : 'user', // Must be exactly 'admin' or 'user'
+        user_type: userType,  // This must match the check constraint values: 'admin' or 'user'
         content: comment,
         is_internal: isAdmin && isInternal
       };
