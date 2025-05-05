@@ -4,9 +4,11 @@ import NavBar from "@/components/NavBar";
 import TicketForm from "@/components/TicketForm";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CreateTicket = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleSubmitSuccess = async (data: any) => {
     try {
@@ -119,9 +121,9 @@ const CreateTicket = () => {
       <main className="flex-grow bg-gray-50 py-10">
         <div className="spybee-container max-w-3xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-spybee-dark mb-2">Create a Support Ticket</h1>
+            <h1 className="text-3xl font-bold text-spybee-dark mb-2">{t('createTicket.title')}</h1>
             <p className="text-gray-600">
-              Fill out the form below to submit a new support ticket. Our team will respond as soon as possible.
+              {t('createTicket.subtitle')}
             </p>
           </div>
           
@@ -141,7 +143,7 @@ const CreateTicket = () => {
                 </div>
                 <span className="font-bold">Spybee Support</span>
               </div>
-              <p className="text-sm mt-2">© {new Date().getFullYear()} Spybee. All rights reserved.</p>
+              <p className="text-sm mt-2">{t('index.footer.rights')}</p>
             </div>
           </div>
         </div>

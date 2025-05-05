@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Language = 'en' | 'es';
 
@@ -51,6 +51,33 @@ const translations = {
     // Language Toggle
     'language.en': 'English',
     'language.es': 'Spanish',
+    
+    // Ticket Status Page
+    'tickets.title': 'Track Your Tickets',
+    'tickets.subtitle': 'Enter your email address to view the status of all your support tickets.',
+    'tickets.emailPlaceholder': 'Enter your email address',
+    'tickets.search': 'Search Tickets',
+    'tickets.searching': 'Searching...',
+    'tickets.yourTickets': 'Your Tickets',
+    'tickets.noTickets': 'No tickets found',
+    'tickets.noTicketsDesc': 'We couldn\'t find any tickets associated with this email address.',
+    'tickets.createNew': 'Create a New Ticket',
+    
+    // Create Ticket Page
+    'createTicket.title': 'Create a Support Ticket',
+    'createTicket.subtitle': 'Fill out the form below to submit a new support ticket. Our team will respond as soon as possible.',
+    
+    // Ticket Details Page
+    'ticketDetails.title': 'Ticket Details',
+    'ticketDetails.back': '← Back to tickets',
+    'ticketDetails.notFound': 'Ticket Not Found',
+    'ticketDetails.notFoundDesc': 'Sorry, we couldn\'t find the ticket you\'re looking for.',
+    'ticketDetails.backToStatus': 'Back to Ticket Status',
+    'ticketDetails.loading': 'Loading ticket details...',
+    
+    // Not Found Page
+    'notFound.message': 'Oops! Page not found',
+    'notFound.returnHome': 'Return to Home',
   },
   es: {
     // Navigation
@@ -93,13 +120,49 @@ const translations = {
     // Language Toggle
     'language.en': 'Inglés',
     'language.es': 'Español',
+    
+    // Ticket Status Page
+    'tickets.title': 'Seguimiento de sus Tickets',
+    'tickets.subtitle': 'Ingrese su dirección de correo electrónico para ver el estado de todos sus tickets de soporte.',
+    'tickets.emailPlaceholder': 'Ingrese su dirección de correo electrónico',
+    'tickets.search': 'Buscar Tickets',
+    'tickets.searching': 'Buscando...',
+    'tickets.yourTickets': 'Sus Tickets',
+    'tickets.noTickets': 'No se encontraron tickets',
+    'tickets.noTicketsDesc': 'No pudimos encontrar tickets asociados con esta dirección de correo electrónico.',
+    'tickets.createNew': 'Crear un Nuevo Ticket',
+    
+    // Create Ticket Page
+    'createTicket.title': 'Crear un Ticket de Soporte',
+    'createTicket.subtitle': 'Complete el formulario a continuación para enviar un nuevo ticket de soporte. Nuestro equipo responderá lo antes posible.',
+    
+    // Ticket Details Page
+    'ticketDetails.title': 'Detalles del Ticket',
+    'ticketDetails.back': '← Volver a tickets',
+    'ticketDetails.notFound': 'Ticket No Encontrado',
+    'ticketDetails.notFoundDesc': 'Lo sentimos, no pudimos encontrar el ticket que está buscando.',
+    'ticketDetails.backToStatus': 'Volver a Estado de Tickets',
+    'ticketDetails.loading': 'Cargando detalles del ticket...',
+    
+    // Not Found Page
+    'notFound.message': '¡Ups! Página no encontrada',
+    'notFound.returnHome': 'Volver al Inicio',
   }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  // Initialize language from localStorage or default to 'en'
+  const [language, setLanguage] = useState<Language>(() => {
+    const savedLanguage = localStorage.getItem('spybee_language');
+    return (savedLanguage === 'en' || savedLanguage === 'es') ? savedLanguage : 'en';
+  });
+
+  // Save to localStorage whenever language changes
+  useEffect(() => {
+    localStorage.setItem('spybee_language', language);
+  }, [language]);
 
   const t = (key: string): string => {
     const translation = translations[language][key as keyof typeof translations[typeof language]];

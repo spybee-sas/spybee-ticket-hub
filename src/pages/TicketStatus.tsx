@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Ticket } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TicketStatus = () => {
   const location = useLocation();
+  const { t } = useLanguage();
   const [email, setEmail] = useState((location.state as any)?.email || "");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [searched, setSearched] = useState(false);
@@ -98,9 +100,9 @@ const TicketStatus = () => {
       <main className="flex-grow bg-gray-50 py-10">
         <div className="spybee-container">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-spybee-dark mb-2">Track Your Tickets</h1>
+            <h1 className="text-3xl font-bold text-spybee-dark mb-2">{t('tickets.title')}</h1>
             <p className="text-gray-600">
-              Enter your email address to view the status of all your support tickets.
+              {t('tickets.subtitle')}
             </p>
           </div>
           
@@ -108,7 +110,7 @@ const TicketStatus = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <Input
                 type="email"
-                placeholder="Enter your email address"
+                placeholder={t('tickets.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="flex-grow"
@@ -118,7 +120,7 @@ const TicketStatus = () => {
                 onClick={handleSearch}
                 disabled={loading}
               >
-                {loading ? "Searching..." : "Search Tickets"}
+                {loading ? t('tickets.searching') : t('tickets.search')}
               </Button>
             </div>
           </div>
@@ -127,7 +129,7 @@ const TicketStatus = () => {
             <div>
               {tickets.length > 0 ? (
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">Your Tickets</h2>
+                  <h2 className="text-xl font-semibold mb-4">{t('tickets.yourTickets')}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {tickets.map((ticket) => (
                       <TicketCard key={ticket.id} ticket={ticket} />
@@ -143,16 +145,16 @@ const TicketStatus = () => {
                       </svg>
                     </div>
                   </div>
-                  <h3 className="text-lg font-medium mb-2">No tickets found</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('tickets.noTickets')}</h3>
                   <p className="text-gray-500 mb-4">
-                    We couldn't find any tickets associated with this email address.
+                    {t('tickets.noTicketsDesc')}
                   </p>
                   <Button
                     onClick={() => window.location.href = "/create-ticket"}
                     variant="outline"
                     className="border-spybee-yellow text-spybee-dark"
                   >
-                    Create a New Ticket
+                    {t('tickets.createNew')}
                   </Button>
                 </div>
               )}
@@ -171,7 +173,9 @@ const TicketStatus = () => {
                 </div>
                 <span className="font-bold">Spybee Support</span>
               </div>
-              <p className="text-sm mt-2">© {new Date().getFullYear()} Spybee. All rights reserved.</p>
+              <p className="text-sm mt-2">
+                {t('index.footer.rights')}
+              </p>
             </div>
           </div>
         </div>

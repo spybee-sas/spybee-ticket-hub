@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import NavBar from "@/components/NavBar";
 import TicketDetail from "@/components/TicketDetail";
 import { Button } from "@/components/ui/button";
-import { Ticket, TicketAttachment } from "@/types/ticket";
+import { Ticket } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TicketDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -82,7 +84,7 @@ const TicketDetails = () => {
         <NavBar />
         <main className="flex-grow bg-gray-50 py-10">
           <div className="spybee-container">
-            <div className="text-center py-12">Loading ticket details...</div>
+            <div className="text-center py-12">{t('ticketDetails.loading')}</div>
           </div>
         </main>
       </div>
@@ -96,10 +98,10 @@ const TicketDetails = () => {
         <main className="flex-grow bg-gray-50 py-10">
           <div className="spybee-container">
             <div className="text-center py-12">
-              <h2 className="text-2xl font-bold mb-4">Ticket Not Found</h2>
-              <p className="mb-6">Sorry, we couldn't find the ticket you're looking for.</p>
+              <h2 className="text-2xl font-bold mb-4">{t('ticketDetails.notFound')}</h2>
+              <p className="mb-6">{t('ticketDetails.notFoundDesc')}</p>
               <Button onClick={() => navigate("/ticket-status")} className="bg-spybee-yellow text-spybee-dark">
-                Back to Ticket Status
+                {t('ticketDetails.backToStatus')}
               </Button>
             </div>
           </div>
@@ -120,10 +122,10 @@ const TicketDetails = () => {
               onClick={() => navigate("/ticket-status")}
               className="mb-2"
             >
-              ← Back to tickets
+              {t('ticketDetails.back')}
             </Button>
             <h1 className="text-3xl font-bold text-spybee-dark">
-              Ticket Details
+              {t('ticketDetails.title')}
             </h1>
           </div>
           
@@ -141,7 +143,7 @@ const TicketDetails = () => {
                 </div>
                 <span className="font-bold">Spybee Support</span>
               </div>
-              <p className="text-sm mt-2">© {new Date().getFullYear()} Spybee. All rights reserved.</p>
+              <p className="text-sm mt-2">{t('index.footer.rights')}</p>
             </div>
           </div>
         </div>

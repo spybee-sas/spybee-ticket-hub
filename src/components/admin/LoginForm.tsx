@@ -13,7 +13,7 @@ type CheckAdminPasswordParams = {
   admin_password: string;
 }
 
-// Define the return type explicitly as boolean
+// Define the return type explicitly
 type CheckAdminPasswordResult = boolean;
 
 const LoginForm = () => {
@@ -47,7 +47,7 @@ const LoginForm = () => {
       
       // Call the RPC function with the correct type parameters
       const { data: passwordCheck, error: passwordError } = await supabase
-        .rpc<boolean, CheckAdminPasswordParams>('check_admin_password', {
+        .rpc<CheckAdminPasswordResult, CheckAdminPasswordParams>('check_admin_password', {
           admin_email: email,
           admin_password: password
         });
