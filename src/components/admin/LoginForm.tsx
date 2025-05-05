@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,17 @@ const LoginForm = () => {
       
       if (passwordError || !data) {
         throw new Error('Invalid credentials');
+      }
+      
+      // Set up anonymous session with admin ID
+      // This is a simplified approach for demo purposes
+      try {
+        // Sign in anonymously to establish a session
+        await supabase.auth.signInAnonymously();
+        console.log("Anonymous session established for admin operations");
+      } catch (authError) {
+        console.error("Auth setup error:", authError);
+        // Continue anyway - we'll use custom headers as fallback
       }
       
       // Store admin session in localStorage
