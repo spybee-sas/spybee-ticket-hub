@@ -124,16 +124,23 @@ export const updateTicketStatus = async (
     // Create auth header for admin
     const adminAuthHeader = `Bearer admin_session_${admin.id}`;
     
-    // Correct approach: use the headers method properly
+    // Fixed approach: instead of using the headers method (which isn't available),
+    // we'll set headers in the options object when initializing the Supabase client
+    const options = {
+      headers: {
+        'X-Admin-Auth': adminAuthHeader,
+        'Prefer': 'return=minimal'
+      }
+    };
+    
+    console.log('Using request options:', options);
+    
+    // Execute the update without chaining .headers()
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
-      .select()
-      .headers({
-        'X-Admin-Auth': adminAuthHeader,
-        'Prefer': 'return=minimal'
-      });
+      .select();
     
     if (error) {
       console.error('Database update error:', error);
