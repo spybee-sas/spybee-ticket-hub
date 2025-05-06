@@ -162,4 +162,3 @@ const TicketComments = ({
 };
 
 export default TicketComments;
-

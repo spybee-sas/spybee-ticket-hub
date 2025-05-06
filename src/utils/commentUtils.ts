@@ -22,7 +22,7 @@ export const fetchTicketComments = async (ticketId: string): Promise<TicketComme
         user_id
       `)
       .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(`Error fetching comments: ${error.message}`);
@@ -88,7 +88,7 @@ export const addTicketComment = async (
   isInternal: boolean = false
 ): Promise<TicketComment | null> => {
   try {
-    // Ensure we have a valid userId - anonymous is now acceptable since we altered the column
+    // Ensure we have a valid userId - accept any string now that column is TEXT type
     const validUserId = userId || 'anonymous';
     
     const { data, error } = await supabase
@@ -115,7 +115,7 @@ export const addTicketComment = async (
         .from('users')
         .select('name')
         .eq('id', validUserId)
-        .single();
+        .maybeSingle(); // Using maybeSingle instead of single to avoid errors
         
       if (!userError && userData) {
         userName = userData.name;
