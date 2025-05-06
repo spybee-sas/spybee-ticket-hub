@@ -19,14 +19,35 @@ export const fetchTicketComments = async (ticketId: string): Promise<TicketComme
         created_at,
         is_internal,
         user_type,
-        user_id,
-        users(name)
+        user_id
       `)
       .eq('ticket_id', ticketId)
       .order('created_at', { ascending: true });
 
     if (error) {
       throw new Error(`Error fetching comments: ${error.message}`);
+    }
+
+    // Get users separately since we can't establish a direct join
+    const userIds = commentData
+      .filter(comment => comment.user_id !== 'anonymous')
+      .map(comment => comment.user_id);
+
+    // Only fetch users if we have user IDs
+    let usersMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, name')
+        .in('id', userIds);
+
+      if (!usersError && usersData) {
+        // Create a map of user_id to name for easy lookup
+        usersMap = usersData.reduce((acc, user) => {
+          acc[user.id] = user.name;
+          return acc;
+        }, {} as Record<string, string>);
+      }
     }
 
     // Transform the data to match our TicketComment interface
@@ -38,8 +59,8 @@ export const fetchTicketComments = async (ticketId: string): Promise<TicketComme
       is_internal: comment.is_internal,
       user_type: comment.user_type as UserType, // Cast string to UserType
       user_id: comment.user_id,
-      // Use the user's name if available, otherwise use user type as fallback
-      user: comment.users?.name || (comment.user_type === 'admin' ? 'Admin' : 'User')
+      // Use the user's name from our map if available, otherwise use user type as fallback
+      user: usersMap[comment.user_id] || (comment.user_type === 'admin' ? 'Admin' : 'User')
     }));
 
     return comments;
@@ -63,7 +84,7 @@ export const addTicketComment = async (
   ticketId: string,
   content: string,
   userId: string,
-  userType: UserType, // Already typed as UserType
+  userType: UserType,
   isInternal: boolean = false
 ): Promise<TicketComment | null> => {
   try {
@@ -105,7 +126,7 @@ export const addTicketComment = async (
       content: data.content,
       created_at: data.created_at,
       is_internal: data.is_internal,
-      user_type: data.user_type as UserType, // Cast string to UserType
+      user_type: data.user_type as UserType,
       user_id: data.user_id,
       user: userName
     };
