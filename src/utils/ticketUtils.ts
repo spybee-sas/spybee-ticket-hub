@@ -86,6 +86,12 @@ const getAdminData = (): { id: string, email: string, name: string, isAdmin: boo
 
 /**
  * Updates a ticket's status in the database
+ * @param ticketId The ID of the ticket to update
+ * @param newStatus The new status to set
+ * @param currentTickets The current array of tickets
+ * @param setTickets Function to update the tickets state
+ * @param refreshCallback Optional callback to refresh data after update
+ * @returns Promise with success status and optional data/error
  */
 export const updateTicketStatus = async (
   ticketId: string, 
@@ -96,27 +102,6 @@ export const updateTicketStatus = async (
 ): Promise<{success: boolean, data?: any, error?: any}> => {
   try {
     console.log(`Starting status update operation for ticket ${ticketId} to ${newStatus}...`);
-    
-    // Get admin data
-    const admin = getAdminData();
-    if (!admin) {
-      throw new Error('Admin authentication failed');
-    }
-    
-    // First verify the ticket exists
-    const { data: existingTicket, error: fetchError } = await supabase
-      .from('tickets')
-      .select('*')
-      .eq('id', ticketId)
-      .maybeSingle();
-      
-    if (fetchError) {
-      throw new Error(`Failed to fetch ticket: ${fetchError.message}`);
-    }
-    
-    if (!existingTicket) {
-      throw new Error(`Ticket with ID ${ticketId} not found`);
-    }
     
     // Prepare the update data
     const updateData = {
