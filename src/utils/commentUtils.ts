@@ -88,12 +88,15 @@ export const addTicketComment = async (
   isInternal: boolean = false
 ): Promise<TicketComment | null> => {
   try {
+    // Ensure we have a valid userId - anonymous is now acceptable since we altered the column
+    const validUserId = userId || 'anonymous';
+    
     const { data, error } = await supabase
       .from('ticket_comments')
       .insert({
         ticket_id: ticketId,
         content,
-        user_id: userId,
+        user_id: validUserId,
         user_type: userType,
         is_internal: isInternal
       })
@@ -107,11 +110,11 @@ export const addTicketComment = async (
     // Get the user's name if it's a registered user
     let userName = userType === 'admin' ? 'Admin' : 'User';
     
-    if (userId !== 'anonymous') {
+    if (validUserId !== 'anonymous') {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('name')
-        .eq('id', userId)
+        .eq('id', validUserId)
         .single();
         
       if (!userError && userData) {

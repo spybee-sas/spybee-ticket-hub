@@ -47,7 +47,7 @@ const TicketComments = ({
     try {
       const userType: UserType = isAdmin ? 'admin' : 'user';
       // Use adminId for admins, or the provided userId for users
-      const commentUserId = isAdmin ? adminInfo?.id : userId;
+      const commentUserId = isAdmin ? (adminInfo?.id || 'anonymous') : userId;
       
       // Use the utility function to add the comment
       const newCommentObj = await addTicketComment(
