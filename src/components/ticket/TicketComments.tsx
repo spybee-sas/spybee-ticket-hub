@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { TicketComment, UserType } from "@/types/ticket";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchTicketComments, addTicketComment } from "@/utils/commentUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TicketCommentsProps {
@@ -49,36 +49,16 @@ const TicketComments = ({
       // Use adminId for admins, or the provided userId for users
       const commentUserId = isAdmin ? adminInfo?.id : userId;
       
-      // Save comment to Supabase
-      const { data, error } = await supabase
-        .from('ticket_comments')
-        .insert({
-          ticket_id: ticketId,
-          content: newComment,
-          user_id: commentUserId,
-          user_type: userType,
-          is_internal: isAdmin && isInternal
-        })
-        .select()
-        .single();
+      // Use the utility function to add the comment
+      const newCommentObj = await addTicketComment(
+        ticketId,
+        newComment,
+        commentUserId,
+        userType,
+        isAdmin && isInternal
+      );
       
-      if (error) {
-        throw new Error(`Error adding comment: ${error.message}`);
-      }
-      
-      if (data) {
-        // Create comment object for the UI
-        const newCommentObj: TicketComment = {
-          id: data.id,
-          ticket_id: data.ticket_id,
-          user: isAdmin ? 'Admin' : userDisplayName,
-          content: data.content,
-          created_at: data.created_at,
-          is_internal: data.is_internal,
-          user_type: userType,
-          user_id: data.user_id
-        };
-        
+      if (newCommentObj) {
         onCommentAdded(newCommentObj);
         setNewComment("");
         setIsInternal(false);

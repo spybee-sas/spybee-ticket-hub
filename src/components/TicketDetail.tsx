@@ -7,6 +7,7 @@ import TicketHeader from "./ticket/TicketHeader";
 import TicketAttachments from "./ticket/TicketAttachments";
 import TicketComments from "./ticket/TicketComments";
 import { validateUserType, updateTicketStatus } from "@/utils/ticketUtils";
+import { fetchTicketComments } from "@/utils/commentUtils";
 
 interface TicketDetailProps {
   ticket: Ticket;
@@ -22,7 +23,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
   // Always fetch fresh ticket data when the component mounts
   useEffect(() => {
     fetchTicketData();
-    fetchComments();
+    fetchCommentsData();
   }, [ticket.id]);
 
   const fetchTicketData = async () => {
@@ -69,41 +70,12 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
     }
   };
 
-  const fetchComments = async () => {
+  const fetchCommentsData = async () => {
     try {
-      const { data, error } = await supabase
-        .from('ticket_comments')
-        .select('*')
-        .eq('ticket_id', ticket.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        throw new Error(`Error fetching comments: ${error.message}`);
-      }
-      
-      if (data) {
-        // Transform the data to match our TicketComment type
-        const formattedComments: TicketComment[] = data.map(comment => {
-          // Validate user_type to ensure it's 'admin' or 'user'
-          const validatedUserType: UserType = validateUserType(comment.user_type);
-          
-          return {
-            id: comment.id,
-            ticket_id: comment.ticket_id,
-            user: validatedUserType === 'admin' ? 'Admin' : ticket.name,
-            content: comment.content,
-            created_at: comment.created_at,
-            is_internal: comment.is_internal,
-            user_type: validatedUserType,
-            user_id: comment.user_id
-          };
-        });
-        
-        setComments(formattedComments);
-      }
-    } catch (error: any) {
+      const commentsData = await fetchTicketComments(ticket.id);
+      setComments(commentsData);
+    } catch (error) {
       console.error("Error fetching comments:", error);
-      toast.error("Failed to load comments");
     }
   };
 
@@ -174,6 +146,7 @@ const TicketDetail = ({ ticket, isAdmin = false }: TicketDetailProps) => {
         onCommentAdded={handleCommentAdded}
         isAdmin={isAdmin}
         userDisplayName={ticketData.name}
+        userId={ticketData.user_id}
       />
     </div>
   );

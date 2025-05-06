@@ -1,5 +1,5 @@
 
-import { TicketComment } from "@/types/ticket";
+import { TicketComment, UserType } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -20,7 +20,7 @@ export const fetchTicketComments = async (ticketId: string): Promise<TicketComme
         is_internal,
         user_type,
         user_id,
-        users!ticket_comments_user_id_fkey(name)
+        users(name)
       `)
       .eq('ticket_id', ticketId)
       .order('created_at', { ascending: true });
@@ -36,7 +36,7 @@ export const fetchTicketComments = async (ticketId: string): Promise<TicketComme
       content: comment.content,
       created_at: comment.created_at,
       is_internal: comment.is_internal,
-      user_type: comment.user_type,
+      user_type: comment.user_type as UserType, // Cast string to UserType
       user_id: comment.user_id,
       // Use the user's name if available, otherwise use user type as fallback
       user: comment.users?.name || (comment.user_type === 'admin' ? 'Admin' : 'User')
@@ -63,7 +63,7 @@ export const addTicketComment = async (
   ticketId: string,
   content: string,
   userId: string,
-  userType: 'admin' | 'user',
+  userType: UserType, // Already typed as UserType
   isInternal: boolean = false
 ): Promise<TicketComment | null> => {
   try {
@@ -105,7 +105,7 @@ export const addTicketComment = async (
       content: data.content,
       created_at: data.created_at,
       is_internal: data.is_internal,
-      user_type: data.user_type,
+      user_type: data.user_type as UserType, // Cast string to UserType
       user_id: data.user_id,
       user: userName
     };
