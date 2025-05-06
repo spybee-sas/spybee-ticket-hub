@@ -1,3 +1,4 @@
+
 import { UserType, TicketStatus } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -116,13 +117,12 @@ export const updateTicketStatus = async (
     
     console.log('Update data being sent to Supabase:', updateData);
     
-    // Use upsert to ensure the update goes through
+    // Remove .single() to avoid the "multiple rows returned" error
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
-      .select('*')
-      .single();
+      .select('*');
     
     // Log complete response for debugging
     console.log('Supabase update response:', { data, error });
@@ -132,7 +132,7 @@ export const updateTicketStatus = async (
       throw new Error(`Failed to update ticket: ${error.message}`);
     }
     
-    if (!data) {
+    if (!data || data.length === 0) {
       throw new Error('No data returned from update operation');
     }
     
@@ -146,16 +146,16 @@ export const updateTicketStatus = async (
     // Update UI state
     setTickets(updatedTickets);
     
-    // If a refresh callback was provided, call it after a delay
+    // If a refresh callback was provided, call it after a longer delay
     if (refreshCallback) {
       console.log('Scheduling data refresh...');
       setTimeout(async () => {
         console.log('Executing refresh callback...');
         await refreshCallback();
-      }, 1500);
+      }, 2000); // Increased delay to ensure DB update has completed
     }
     
-    return { success: true, data };
+    return { success: true, data: data[0] }; // Return the first item from the data array
   } catch (error: any) {
     console.error("Failed to update ticket status:", error);
     return { 
