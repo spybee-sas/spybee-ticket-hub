@@ -36,4 +36,5 @@ export interface TicketComment {
   is_internal: boolean;
   user_type: UserType;
   user_id?: string;
+  user_email?: string; // Añadimos este campo para mostrar el correo electrónico del usuario
 }

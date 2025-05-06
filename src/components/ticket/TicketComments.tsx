@@ -8,6 +8,7 @@ import { TicketComment, UserType } from "@/types/ticket";
 import { toast } from "sonner";
 import { fetchTicketComments, addTicketComment } from "@/utils/commentUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { AtSign } from "lucide-react";
 
 interface TicketCommentsProps {
   ticketId: string;
@@ -15,7 +16,7 @@ interface TicketCommentsProps {
   onCommentAdded: (comment: TicketComment) => void;
   isAdmin: boolean;
   userDisplayName: string;
-  userId?: string; // Add userId prop to track which user is making comments
+  userId?: string;
 }
 
 const TicketComments = ({ 
@@ -24,7 +25,7 @@ const TicketComments = ({
   onCommentAdded, 
   isAdmin, 
   userDisplayName,
-  userId = "anonymous" // Default to "anonymous" if no userId provided
+  userId = "anonymous" 
 }: TicketCommentsProps) => {
   const { t } = useLanguage();
   const [newComment, setNewComment] = useState("");
@@ -130,6 +131,16 @@ const TicketComments = ({
               <div className="flex justify-between mb-2">
                 <div className="font-medium flex items-center">
                   {comment.user}
+                  
+                  {/* Show email if available */}
+                  {comment.user_email && (
+                    <div className="ml-2 text-sm text-gray-500 flex items-center">
+                      <AtSign size={14} className="mr-1" />
+                      {comment.user_email}
+                    </div>
+                  )}
+                  
+                  {/* Comment type labels */}
                   {comment.is_internal && (
                     <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
                       {t('comments.internalLabel')}

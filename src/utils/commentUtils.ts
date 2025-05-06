@@ -34,34 +34,74 @@ export const fetchTicketComments = async (ticketId: string): Promise<TicketComme
       .map(comment => comment.user_id);
 
     // Only fetch users if we have user IDs
-    let usersMap: Record<string, string> = {};
+    let usersMap: Record<string, any> = {}; // Changed to any to store more user data
     if (userIds.length > 0) {
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, name')
+        .select('id, name, email')
         .in('id', userIds);
 
       if (!usersError && usersData) {
-        // Create a map of user_id to name for easy lookup
+        // Create a map of user_id to user data for easy lookup
         usersMap = usersData.reduce((acc, user) => {
-          acc[user.id] = user.name;
+          acc[user.id] = user;
           return acc;
-        }, {} as Record<string, string>);
+        }, {} as Record<string, any>);
+      }
+    }
+
+    // Also fetch admin users if needed
+    const adminUserIds = commentData
+      .filter(comment => comment.user_type === 'admin' && comment.user_id !== 'anonymous')
+      .map(comment => comment.user_id);
+
+    // Only fetch admin users if we have admin IDs
+    let adminsMap: Record<string, any> = {};
+    if (adminUserIds.length > 0) {
+      const { data: adminsData, error: adminsError } = await supabase
+        .from('admins')
+        .select('id, name, email')
+        .in('id', adminUserIds);
+
+      if (!adminsError && adminsData) {
+        // Create a map of admin_id to admin data for easy lookup
+        adminsMap = adminsData.reduce((acc, admin) => {
+          acc[admin.id] = admin;
+          return acc;
+        }, {} as Record<string, any>);
       }
     }
 
     // Transform the data to match our TicketComment interface
-    const comments: TicketComment[] = commentData.map(comment => ({
-      id: comment.id,
-      ticket_id: comment.ticket_id,
-      content: comment.content,
-      created_at: comment.created_at,
-      is_internal: comment.is_internal,
-      user_type: comment.user_type as UserType, // Cast string to UserType
-      user_id: comment.user_id,
-      // Use the user's name from our map if available, otherwise use user type as fallback
-      user: usersMap[comment.user_id] || (comment.user_type === 'admin' ? 'Admin' : 'User')
-    }));
+    const comments: TicketComment[] = commentData.map(comment => {
+      let userData = null;
+      let userDisplayName = 'Anonymous';
+      let userEmail = '';
+
+      if (comment.user_id !== 'anonymous') {
+        if (comment.user_type === 'admin') {
+          userData = adminsMap[comment.user_id];
+          userDisplayName = userData ? userData.name : 'Admin';
+          userEmail = userData ? userData.email : '';
+        } else {
+          userData = usersMap[comment.user_id];
+          userDisplayName = userData ? userData.name : 'User';
+          userEmail = userData ? userData.email : '';
+        }
+      }
+
+      return {
+        id: comment.id,
+        ticket_id: comment.ticket_id,
+        content: comment.content,
+        created_at: comment.created_at,
+        is_internal: comment.is_internal,
+        user_type: comment.user_type as UserType,
+        user_id: comment.user_id,
+        user: userDisplayName,
+        user_email: userEmail, // Add email to the comment object
+      };
+    });
 
     return comments;
   } catch (error: any) {
@@ -107,18 +147,35 @@ export const addTicketComment = async (
       throw new Error(`Error adding comment: ${error.message}`);
     }
 
-    // Get the user's name if it's a registered user
-    let userName = userType === 'admin' ? 'Admin' : 'User';
+    // Get the user's information if it's a registered user
+    let userName = 'Anonymous';
+    let userEmail = '';
     
     if (validUserId !== 'anonymous') {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('name')
-        .eq('id', validUserId)
-        .maybeSingle(); // Using maybeSingle instead of single to avoid errors
-        
-      if (!userError && userData) {
-        userName = userData.name;
+      if (userType === 'admin') {
+        // Fetch admin information
+        const { data: adminData, error: adminError } = await supabase
+          .from('admins')
+          .select('name, email')
+          .eq('id', validUserId)
+          .maybeSingle();
+          
+        if (!adminError && adminData) {
+          userName = adminData.name;
+          userEmail = adminData.email;
+        }
+      } else {
+        // Fetch user information
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('name, email')
+          .eq('id', validUserId)
+          .maybeSingle();
+          
+        if (!userError && userData) {
+          userName = userData.name;
+          userEmail = userData.email;
+        }
       }
     }
 
@@ -131,7 +188,8 @@ export const addTicketComment = async (
       is_internal: data.is_internal,
       user_type: data.user_type as UserType,
       user_id: data.user_id,
-      user: userName
+      user: userName,
+      user_email: userEmail
     };
 
     return newComment;
