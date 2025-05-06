@@ -1,4 +1,3 @@
-
 import { UserType, TicketStatus } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -131,6 +130,7 @@ export const updateTicketStatus = async (
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey, // Adding the apikey header which was missing
         'X-Admin-Auth': `Bearer admin_session_${admin.id}`,
         'Prefer': 'return=representation'
       },
