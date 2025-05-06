@@ -86,12 +86,6 @@ const getAdminData = (): { id: string, email: string, name: string, isAdmin: boo
 
 /**
  * Updates a ticket's status in the database
- * @param ticketId The ID of the ticket to update
- * @param newStatus The new status to set
- * @param currentTickets The current array of tickets
- * @param setTickets Function to update the tickets state
- * @param refreshCallback Optional callback to refresh data after update
- * @returns Promise that resolves to a success boolean and optional data/error
  */
 export const updateTicketStatus = async (
   ticketId: string, 
@@ -109,20 +103,36 @@ export const updateTicketStatus = async (
       throw new Error('Admin authentication failed');
     }
     
-    // Prepare the update data with the correct structure
+    // First verify the ticket exists
+    const { data: existingTicket, error: fetchError } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', ticketId)
+      .maybeSingle();
+      
+    if (fetchError) {
+      throw new Error(`Failed to fetch ticket: ${fetchError.message}`);
+    }
+    
+    if (!existingTicket) {
+      throw new Error(`Ticket with ID ${ticketId} not found`);
+    }
+    
+    // Prepare the update data
     const updateData = {
       status: newStatus,
       updated_at: new Date().toISOString()
     };
     
     console.log('Update data being sent to Supabase:', updateData);
+    console.log('Updating ticket with ID:', ticketId);
     
-    // Remove .single() to avoid the "multiple rows returned" error
+    // Update the ticket
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
-      .select('*');
+      .select();
     
     // Log complete response for debugging
     console.log('Supabase update response:', { data, error });
@@ -136,11 +146,9 @@ export const updateTicketStatus = async (
       throw new Error('No data returned from update operation');
     }
     
-    console.log('Database update succeeded:', data);
-    
     // Update UI optimistically
     const updatedTickets = currentTickets.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: updateData.updated_at } : ticket
+      ticket.id === ticketId ? { ...ticket, ...updateData } : ticket
     );
     
     // Update UI state
@@ -148,14 +156,11 @@ export const updateTicketStatus = async (
     
     // If a refresh callback was provided, call it after a longer delay
     if (refreshCallback) {
-      console.log('Scheduling data refresh...');
-      setTimeout(async () => {
-        console.log('Executing refresh callback...');
-        await refreshCallback();
-      }, 2000); // Increased delay to ensure DB update has completed
+      console.log('Executing refresh callback immediately...');
+      await refreshCallback();
     }
     
-    return { success: true, data: data[0] }; // Return the first item from the data array
+    return { success: true, data: data[0] };
   } catch (error: any) {
     console.error("Failed to update ticket status:", error);
     return { 
