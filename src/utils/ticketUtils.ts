@@ -1,4 +1,3 @@
-
 import { UserType, TicketStatus } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -121,44 +120,32 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
-    // Create auth header for admin
-    const adminAuthHeader = `Bearer admin_session_${admin.id}`;
+    // Update the ticket in Supabase - using fetch directly instead of the Supabase client
+    // This ensures we can properly set the headers for authentication
+    const supabaseUrl = supabase.supabaseUrl;
+    const supabaseKey = supabase.supabaseKey;
     
-    // Fixed approach: instead of using the headers method (which isn't available),
-    // we'll set headers in the options object when initializing the Supabase client
-    const options = {
+    const response = await fetch(`${supabaseUrl}/rest/v1/tickets?id=eq.${ticketId}`, {
+      method: 'PATCH',
       headers: {
-        'X-Admin-Auth': adminAuthHeader,
-        'Prefer': 'return=minimal'
-      }
-    };
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+        'X-Admin-Auth': `Bearer admin_session_${admin.id}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(updateData)
+    });
     
-    console.log('Using request options:', options);
-    
-    // Execute the update without chaining .headers()
-    const { data, error } = await supabase
-      .from('tickets')
-      .update(updateData)
-      .eq('id', ticketId)
-      .select();
-    
-    if (error) {
-      console.error('Database update error:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      
-      // Check for specific error types
-      if (error.code === '42501') {
-        console.error('Permission denied: The current user does not have permission to update this ticket');
-      } else if (error.code === 'PGRST116') {
-        console.error('Row-level security policy violation: The user does not have permission for this operation');
-      }
-      
-      throw error;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Database update failed:', response.status, errorText);
+      throw new Error(`Failed to update ticket: ${response.status} ${errorText}`);
     }
     
-    console.log('Database update succeeded without errors');
+    const data = await response.json();
+    console.log('Database update succeeded:', data);
     
-    // Update UI optimistically after successful database update
+    // Update UI optimistically
     const updatedTickets = currentTickets.map((ticket) =>
       ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: timestamp } : ticket
     );
