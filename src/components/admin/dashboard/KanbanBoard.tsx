@@ -86,7 +86,7 @@ const KanbanBoard = ({
         // Clear the processing state after a short delay to prevent immediate overwrite from parent props
         setTimeout(() => {
           setProcessingDrag(false);
-        }, 1200); // Increased delay for better reliability
+        }, 1500); // Increased delay for better reliability
       }
     }
   };
@@ -95,7 +95,7 @@ const KanbanBoard = ({
     return <LoadingState message="Updating board..." />;
   }
 
-  // Ensure that droppable IDs are consistent
+  // Ensure that droppable IDs are consistent with the ones in mapColumnToStatus
   const columnIds = {
     open: "open-column",
     inProgress: "in-progress-column",

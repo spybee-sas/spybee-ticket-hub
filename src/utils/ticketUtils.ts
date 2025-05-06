@@ -120,12 +120,16 @@ export const updateTicketStatus = async (
     
     console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
     
-    // Use the Supabase client directly instead of a raw fetch
+    // Use the Supabase client directly with explicit debugging
+    console.log("About to send update request to Supabase");
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
       .select();
+    
+    // Log the complete response for debugging
+    console.log("Supabase update response:", { data, error });
     
     if (error) {
       console.error('Database update failed:', error);
@@ -148,7 +152,7 @@ export const updateTicketStatus = async (
       // Wait a short delay before refreshing to ensure the database update has propagated
       setTimeout(async () => {
         await refreshCallback();
-      }, 1200); // Increased delay for better reliability
+      }, 1500); // Increased delay for better reliability
     }
     
     return { success: true, data };
