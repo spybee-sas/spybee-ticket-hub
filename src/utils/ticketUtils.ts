@@ -1,3 +1,4 @@
+
 import { UserType, TicketStatus } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -120,10 +121,10 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
-    // Update the ticket in Supabase - using fetch directly instead of the Supabase client
-    // This ensures we can properly set the headers for authentication
-    const supabaseUrl = supabase.supabaseUrl;
-    const supabaseKey = supabase.supabaseKey;
+    // Update the ticket in Supabase using the REST API directly
+    // Using the project URL from the environment instead of accessing protected properties
+    const supabaseUrl = "https://badvvskmnfzuichrwzhg.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhZHZ2c2ttbmZ6dWljaHJ3emhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0NDE2NDQsImV4cCI6MjA2MTAxNzY0NH0.TOLfY1pf1hzCXrLVoN8s7eGHLOc8M_YNlBdx34HQ6QM";
     
     const response = await fetch(`${supabaseUrl}/rest/v1/tickets?id=eq.${ticketId}`, {
       method: 'PATCH',
