@@ -113,37 +113,18 @@ export const updateTicketStatus = async (
     
     console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
     
-    // Explicitly prepare the update data
-    const updateData = { 
-      status: newStatus,
-      updated_at: timestamp
-    };
-    console.log('Update data:', updateData);
+    // Use the Supabase client directly instead of a raw fetch
+    const { data, error } = await supabase
+      .from('tickets')
+      .update(updateData)
+      .eq('id', ticketId)
+      .select();
     
-    // Update the ticket in Supabase using the REST API directly
-    // Using the project URL from the environment instead of accessing protected properties
-    const supabaseUrl = "https://badvvskmnfzuichrwzhg.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhZHZ2c2ttbmZ6dWljaHJ3emhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0NDE2NDQsImV4cCI6MjA2MTAxNzY0NH0.TOLfY1pf1hzCXrLVoN8s7eGHLOc8M_YNlBdx34HQ6QM";
-    
-    const response = await fetch(`${supabaseUrl}/rest/v1/tickets?id=eq.${ticketId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
-        'apikey': supabaseKey, // Adding the apikey header which was missing
-        'X-Admin-Auth': `Bearer admin_session_${admin.id}`,
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify(updateData)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Database update failed:', response.status, errorText);
-      throw new Error(`Failed to update ticket: ${response.status} ${errorText}`);
+    if (error) {
+      console.error('Database update failed:', error);
+      throw new Error(`Failed to update ticket: ${error.message}`);
     }
     
-    const data = await response.json();
     console.log('Database update succeeded:', data);
     
     // Update UI optimistically
