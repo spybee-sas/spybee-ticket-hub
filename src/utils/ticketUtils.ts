@@ -1,4 +1,3 @@
-
 import { UserType, TicketStatus } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -109,56 +108,56 @@ export const updateTicketStatus = async (
       throw new Error('Admin authentication failed');
     }
     
-    // Prepare the timestamp for the update
-    const timestamp = new Date().toISOString();
-    
-    // Explicitly prepare the update data
-    const updateData = { 
+    // Prepare the update data with the correct structure
+    const updateData = {
       status: newStatus,
-      updated_at: timestamp
+      updated_at: new Date().toISOString()
     };
     
-    console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
+    console.log('Update data being sent to Supabase:', updateData);
     
-    // Use the Supabase client directly with explicit debugging
-    console.log("About to send update request to Supabase");
+    // Use upsert to ensure the update goes through
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
-      .select();
+      .select('*')
+      .single();
     
-    // Log the complete response for debugging
-    console.log("Supabase update response:", { data, error });
+    // Log complete response for debugging
+    console.log('Supabase update response:', { data, error });
     
     if (error) {
       console.error('Database update failed:', error);
       throw new Error(`Failed to update ticket: ${error.message}`);
     }
     
+    if (!data) {
+      throw new Error('No data returned from update operation');
+    }
+    
     console.log('Database update succeeded:', data);
     
     // Update UI optimistically
     const updatedTickets = currentTickets.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: timestamp } : ticket
+      ticket.id === ticketId ? { ...ticket, status: newStatus, updated_at: updateData.updated_at } : ticket
     );
     
-    // Update UI
+    // Update UI state
     setTickets(updatedTickets);
     
-    // If a refresh callback was provided, call it to ensure fresh data
+    // If a refresh callback was provided, call it after a delay
     if (refreshCallback) {
-      console.log('Refreshing data after successful update...');
-      // Wait a short delay before refreshing to ensure the database update has propagated
+      console.log('Scheduling data refresh...');
       setTimeout(async () => {
+        console.log('Executing refresh callback...');
         await refreshCallback();
-      }, 1500); // Increased delay for better reliability
+      }, 1500);
     }
     
     return { success: true, data };
   } catch (error: any) {
     console.error("Failed to update ticket status:", error);
-    
     return { 
       success: false, 
       error: error.message || "Failed to update ticket status" 
