@@ -74,6 +74,11 @@ const translations = {
     'ticketDetails.notFoundDesc': 'Sorry, we couldn\'t find the ticket you\'re looking for.',
     'ticketDetails.backToStatus': 'Back to Ticket Status',
     'ticketDetails.loading': 'Loading ticket details...',
+    'ticketDetails.updateStatus': 'Update Status',
+    'ticketDetails.selectStatus': 'Select status',
+    'ticketDetails.from': 'From',
+    'ticketDetails.created': 'Created',
+    'ticketDetails.description': 'Description',
     
     // Not Found Page
     'notFound.message': 'Oops! Page not found',
@@ -101,7 +106,21 @@ const translations = {
     'ticket.submit': 'Submit Ticket',
     'ticket.submitting': 'Submitting...',
     'ticket.submitSuccess': 'Ticket submitted successfully!',
-    'ticket.id': 'Ticket ID'
+    'ticket.id': 'Ticket ID',
+    
+    // Comments
+    'comments.title': 'Comments',
+    'comments.placeholder': 'Write your comment here...',
+    'comments.internal': 'Internal Comment (Only visible to admins)',
+    'comments.submit': 'Submit Comment',
+    'comments.submitting': 'Submitting...',
+    'comments.added': 'Comment added successfully',
+    'comments.empty': 'Comment cannot be empty',
+    'comments.error': 'Failed to add comment',
+    'comments.none': 'No comments yet',
+    'comments.internalLabel': 'Internal',
+    'comments.adminLabel': 'Admin',
+    'comments.customerLabel': 'Customer'
   },
   es: {
     // Navigation
@@ -167,6 +186,11 @@ const translations = {
     'ticketDetails.notFoundDesc': 'Lo sentimos, no pudimos encontrar el ticket que está buscando.',
     'ticketDetails.backToStatus': 'Volver a Estado de Tickets',
     'ticketDetails.loading': 'Cargando detalles del ticket...',
+    'ticketDetails.updateStatus': 'Actualizar Estado',
+    'ticketDetails.selectStatus': 'Seleccionar estado',
+    'ticketDetails.from': 'De',
+    'ticketDetails.created': 'Creado',
+    'ticketDetails.description': 'Descripción',
     
     // Not Found Page
     'notFound.message': '¡Ups! Página no encontrada',
@@ -194,7 +218,21 @@ const translations = {
     'ticket.submit': 'Enviar Ticket',
     'ticket.submitting': 'Enviando...',
     'ticket.submitSuccess': '¡Ticket enviado con éxito!',
-    'ticket.id': 'ID del Ticket'
+    'ticket.id': 'ID del Ticket',
+    
+    // Comments
+    'comments.title': 'Comentarios',
+    'comments.placeholder': 'Escriba su comentario aquí...',
+    'comments.internal': 'Comentario Interno (Solo visible para administradores)',
+    'comments.submit': 'Enviar Comentario',
+    'comments.submitting': 'Enviando...',
+    'comments.added': 'Comentario agregado exitosamente',
+    'comments.empty': 'El comentario no puede estar vacío',
+    'comments.error': 'Error al agregar el comentario',
+    'comments.none': 'No hay comentarios aún',
+    'comments.internalLabel': 'Interno',
+    'comments.adminLabel': 'Admin',
+    'comments.customerLabel': 'Cliente'
   }
 };
 

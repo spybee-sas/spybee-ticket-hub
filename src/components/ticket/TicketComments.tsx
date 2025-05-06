@@ -135,12 +135,12 @@ const TicketComments = ({
                   )}
                   {comment.user_type === "admin" && (
                     <span className="ml-2 text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">
-                      Admin
+                      {t('comments.adminLabel')}
                     </span>
                   )}
                   {comment.user_type === "user" && (
                     <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
-                      Customer
+                      {t('comments.customerLabel')}
                     </span>
                   )}
                 </div>
@@ -162,3 +162,4 @@ const TicketComments = ({
 };
 
 export default TicketComments;
+
