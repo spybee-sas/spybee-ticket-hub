@@ -121,20 +121,21 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
-    // Create headers with admin auth information
-    // This header will be passed to your RLS policies
-    const headers = {
-      'X-Admin-Auth': `Bearer admin_session_${admin.id}`,
-      'Prefer': 'return=minimal'
-    };
+    // Create headers with admin auth information for authorization
+    // This will be added as custom headers to the request
+    const authHeader = `Bearer admin_session_${admin.id}`;
     
     // Update the database with more detailed error logging
+    // Fixed: Use the .headers() method properly with the correct syntax
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
       .select()
-      .headers(headers);
+      .headers({
+        'X-Admin-Auth': authHeader,
+        'Prefer': 'return=minimal'
+      });
     
     if (error) {
       console.error('Database update error:', error);
