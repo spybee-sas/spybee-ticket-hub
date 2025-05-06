@@ -15,6 +15,7 @@ interface TicketCommentsProps {
   onCommentAdded: (comment: TicketComment) => void;
   isAdmin: boolean;
   userDisplayName: string;
+  userId?: string; // Add userId prop to track which user is making comments
 }
 
 const TicketComments = ({ 
@@ -22,7 +23,8 @@ const TicketComments = ({
   comments, 
   onCommentAdded, 
   isAdmin, 
-  userDisplayName 
+  userDisplayName,
+  userId = "anonymous" // Default to "anonymous" if no userId provided
 }: TicketCommentsProps) => {
   const { t } = useLanguage();
   const [newComment, setNewComment] = useState("");
@@ -44,7 +46,8 @@ const TicketComments = ({
     
     try {
       const userType: UserType = isAdmin ? 'admin' : 'user';
-      const userId = isAdmin ? adminInfo?.id : "anonymous"; // Use admin ID or anonymous for users
+      // Use adminId for admins, or the provided userId for users
+      const commentUserId = isAdmin ? adminInfo?.id : userId;
       
       // Save comment to Supabase
       const { data, error } = await supabase
@@ -52,7 +55,7 @@ const TicketComments = ({
         .insert({
           ticket_id: ticketId,
           content: newComment,
-          user_id: userId,
+          user_id: commentUserId,
           user_type: userType,
           is_internal: isAdmin && isInternal
         })
@@ -148,6 +151,16 @@ const TicketComments = ({
                   {comment.is_internal && (
                     <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
                       {t('comments.internalLabel')}
+                    </span>
+                  )}
+                  {comment.user_type === "admin" && (
+                    <span className="ml-2 text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">
+                      Admin
+                    </span>
+                  )}
+                  {comment.user_type === "user" && (
+                    <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
+                      Customer
                     </span>
                   )}
                 </div>
