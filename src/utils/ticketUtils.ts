@@ -121,17 +121,25 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
+    // Create auth header for admin
+    const adminAuthHeader = `Bearer admin_session_${admin.id}`;
+    
     // FIX: Correctly apply headers to the Supabase request
-    // We need to create the headers object but apply it using the correct method syntax
-    const { data, error } = await supabase
+    // We need to modify our approach since .headers() is protected
+    // First set up the query without executing it
+    const query = supabase
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
-      .select()
-      .headers({
-        'X-Admin-Auth': `Bearer admin_session_${admin.id}`,
-        'Prefer': 'return=minimal'
-      });
+      .select();
+    
+    // Add custom headers to the internal request object
+    // @ts-ignore - We're accessing the internal implementation which TypeScript can't see
+    query.headers.append('X-Admin-Auth', adminAuthHeader);
+    query.headers.append('Prefer', 'return=minimal');
+    
+    // Now execute the query
+    const { data, error } = await query;
     
     if (error) {
       console.error('Database update error:', error);
