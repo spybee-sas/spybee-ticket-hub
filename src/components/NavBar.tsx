@@ -55,18 +55,9 @@ const NavBar = () => {
             </Link>
           </div>
           
-          {/* Language Toggle and Admin Link */}
+          {/* Language Toggle Only - Admin Link Removed */}
           <div className="flex items-center space-x-4">
             <LanguageToggle />
-            <Link 
-              to="/admin/login" 
-              className={cn(
-                "font-medium transition-colors hover:text-spybee-yellow",
-                location.pathname.startsWith('/admin') ? "text-spybee-yellow" : "text-spybee-dark"
-              )}
-            >
-              {t('nav.admin')}
-            </Link>
           </div>
         </div>
       </div>
