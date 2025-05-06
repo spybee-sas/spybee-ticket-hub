@@ -121,19 +121,15 @@ export const updateTicketStatus = async (
     };
     console.log('Update data:', updateData);
     
-    // Create headers with admin auth information for authorization
-    // This will be added as custom headers to the request
-    const authHeader = `Bearer admin_session_${admin.id}`;
-    
-    // Update the database with more detailed error logging
-    // Fixed: Use the .headers() method properly with the correct syntax
+    // FIX: Correctly apply headers to the Supabase request
+    // We need to create the headers object but apply it using the correct method syntax
     const { data, error } = await supabase
       .from('tickets')
       .update(updateData)
       .eq('id', ticketId)
       .select()
       .headers({
-        'X-Admin-Auth': authHeader,
+        'X-Admin-Auth': `Bearer admin_session_${admin.id}`,
         'Prefer': 'return=minimal'
       });
     
