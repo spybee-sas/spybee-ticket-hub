@@ -1,3 +1,4 @@
+
 import { UserType, TicketStatus } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -110,6 +111,12 @@ export const updateTicketStatus = async (
     
     // Prepare the timestamp for the update
     const timestamp = new Date().toISOString();
+    
+    // Explicitly prepare the update data
+    const updateData = { 
+      status: newStatus,
+      updated_at: timestamp
+    };
     
     console.log(`Sending update to Supabase: ticketId=${ticketId}, status=${newStatus}`);
     

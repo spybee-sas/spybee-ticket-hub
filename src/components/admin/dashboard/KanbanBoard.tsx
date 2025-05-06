@@ -95,6 +95,13 @@ const KanbanBoard = ({
     return <LoadingState message="Updating board..." />;
   }
 
+  // Ensure that droppable IDs are consistent
+  const columnIds = {
+    open: "open-column",
+    inProgress: "in-progress-column",
+    closed: "closed-column"
+  };
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -105,7 +112,7 @@ const KanbanBoard = ({
           handleStatusChange={handleStatusChange}
           navigate={navigate}
           columnColor="blue"
-          droppableId="open-column"
+          droppableId={columnIds.open}
         />
         
         {/* In Progress Column */}
@@ -115,7 +122,7 @@ const KanbanBoard = ({
           handleStatusChange={handleStatusChange}
           navigate={navigate}
           columnColor="amber"
-          droppableId="in-progress-column"
+          droppableId={columnIds.inProgress}
         />
         
         {/* Closed Column */}
@@ -125,7 +132,7 @@ const KanbanBoard = ({
           handleStatusChange={handleStatusChange}
           navigate={navigate}
           columnColor="green"
-          droppableId="closed-column"
+          droppableId={columnIds.closed}
         />
       </div>
     </DragDropContext>
