@@ -18,10 +18,11 @@ const NavBar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-spybee-yellow rounded-md flex items-center justify-center">
-              <span className="font-bold text-spybee-dark">SB</span>
-            </div>
-            <span className="font-bold text-xl text-spybee-dark">Spybee Support</span>
+            <img 
+              src="public/lovable-uploads/b9a59ae1-5da2-4f4a-9433-a99f0c4dbb65.png" 
+              alt="Spybee Logo" 
+              className="h-8" 
+            />
           </Link>
           
           {/* Navigation Links */}

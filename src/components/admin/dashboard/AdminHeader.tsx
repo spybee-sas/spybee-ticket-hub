@@ -17,9 +17,11 @@ const AdminHeader = () => {
       <div className="spybee-container py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 bg-spybee-yellow rounded-md flex items-center justify-center">
-              <span className="font-bold text-spybee-dark">SB</span>
-            </div>
+            <img 
+              src="/lovable-uploads/662d8ee9-d27f-45d5-9240-dea291a54943.png" 
+              alt="Spybee Logo" 
+              className="h-8" 
+            />
             <h1 className="text-xl font-bold">Spybee Admin</h1>
           </div>
           
